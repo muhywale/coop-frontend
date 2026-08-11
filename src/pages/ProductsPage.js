@@ -33,7 +33,14 @@ function ProductsPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await createProduct(formData);
+      const payload = {
+        ...formData,
+        interest_type: formData.interest_type || null,
+        interest_rate: formData.interest_rate
+          ? parseFloat(formData.interest_rate)
+          : null,
+      };
+      await createProduct(payload);
       setMessage(`"${formData.name}" added successfully.`);
       setFormData({
         name: "",
@@ -47,7 +54,6 @@ function ProductsPage() {
       setMessage(err.response?.data?.error || "Failed to add product");
     }
   };
-
   const handleDeactivate = async (id) => {
     if (
       !window.confirm(
