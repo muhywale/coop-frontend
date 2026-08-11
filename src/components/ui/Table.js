@@ -2,8 +2,8 @@ import React from "react";
 
 function Table({ children }) {
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-      <table className="w-full text-left">{children}</table>
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
+      <table className="w-full text-left min-w-[600px]">{children}</table>
     </div>
   );
 }

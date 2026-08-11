@@ -16,13 +16,14 @@ function PaymentDistributionPage() {
   const [savingsProducts, setSavingsProducts] = useState([]);
   const [memberLoans, setMemberLoans] = useState([]);
   const [savingsAmounts, setSavingsAmounts] = useState({}); // { [product_id]: amount }
+  const [otherProducts, setOtherProducts] = useState([]);
+  const [otherAmounts, setOtherAmounts] = useState({}); // { [product_id]: amount }
+
   const [formData, setFormData] = useState({
     member_id: "",
     date: new Date().toISOString().slice(0, 10),
     loan_id: "",
     loan_repayment: "",
-    card: "",
-    reg_fee: "",
     notes: "",
   });
   const [message, setMessage] = useState("");
@@ -31,6 +32,7 @@ function PaymentDistributionPage() {
     getMembers().then((res) => setMembers(res.data));
     getProducts().then((res) => {
       setSavingsProducts(res.data.filter((p) => p.category === "savings"));
+      setOtherProducts(res.data.filter((p) => p.category === "other"));
     });
   }, []);
 
@@ -48,32 +50,42 @@ function PaymentDistributionPage() {
     setSavingsAmounts({ ...savingsAmounts, [productId]: value });
   };
 
+  const handleOtherChange = (productId, value) => {
+    setOtherAmounts({ ...otherAmounts, [productId]: value });
+  };
+
+  const otherTotal = Object.values(otherAmounts).reduce(
+    (sum, v) => sum + (parseFloat(v) || 0),
+    0,
+  );
+
   const savingsTotal = Object.values(savingsAmounts).reduce(
     (sum, v) => sum + (parseFloat(v) || 0),
     0,
   );
+
   const totalDistributed =
-    savingsTotal +
-    (parseFloat(formData.loan_repayment) || 0) +
-    (parseFloat(formData.card) || 0) +
-    (parseFloat(formData.reg_fee) || 0);
+    savingsTotal + (parseFloat(formData.loan_repayment) || 0) + otherTotal;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setMessage("");
     try {
-      await distributePayment({ ...formData, savings: savingsAmounts });
+      await distributePayment({
+        ...formData,
+        savings: savingsAmounts,
+        other: otherAmounts,
+      });
       setMessage("Payment recorded successfully.");
       setFormData({
         member_id: "",
         date: new Date().toISOString().slice(0, 10),
         loan_id: "",
         loan_repayment: "",
-        card: "",
-        reg_fee: "",
         notes: "",
       });
       setSavingsAmounts({});
+      setOtherAmounts({});
       setMemberLoans([]);
     } catch (err) {
       setMessage(err.response?.data?.error || "Failed to record payment");
@@ -146,28 +158,22 @@ function PaymentDistributionPage() {
               />
             </div>
             <div>
-              <label className="text-xs text-gray-500">Card</label>
-              <input
-                type="number"
-                step="0.01"
-                name="card"
-                value={formData.card}
-                onChange={handleChange}
-                placeholder="0"
-                className={inputClass}
-              />
-            </div>
-            <div>
-              <label className="text-xs text-gray-500">Reg Fee</label>
-              <input
-                type="number"
-                step="0.01"
-                name="reg_fee"
-                value={formData.reg_fee}
-                onChange={handleChange}
-                placeholder="0"
-                className={inputClass}
-              />
+              <p className="text-xs text-gray-500 font-medium mb-2">Other</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {otherProducts.map((p) => (
+                  <div key={p.id}>
+                    <label className="text-xs text-gray-500">{p.name}</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      value={otherAmounts[p.id] || ""}
+                      onChange={(e) => handleOtherChange(p.id, e.target.value)}
+                      placeholder="0"
+                      className={inputClass}
+                    />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>

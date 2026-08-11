@@ -10,7 +10,7 @@ const inputClass =
   "w-full border border-gray-300 rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent";
 
 function LoginPage() {
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const { login } = useAuth();
@@ -18,22 +18,20 @@ function LoginPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log("Login button clicked, attempting request...");
     setError("");
     try {
-      const response = await loginUser({ email, password });
-      login(response.data.user, response.data.token); // ← this line was missing
+      const response = await loginUser({ username, password });
+      login(response.data.user, response.data.token);
 
-      if (response.data.user.role === "admin") {
+      if (response.data.user.must_change_password) {
+        navigate("/change-password");
+      } else if (response.data.user.role === "admin") {
         navigate("/");
       } else {
         navigate("/my-profile");
       }
-    } catch (err) {
-      console.log("Login error caught:", err);
-      console.log("Error response:", err.response);
-      console.log("Error message:", err.message);
-      setError("Invalid email or password");
+    } catch {
+      setError("Invalid username or password");
     }
   };
 
@@ -46,10 +44,10 @@ function LoginPage() {
         <h2 className="text-xl font-bold mb-6">Login</h2>
         <form onSubmit={handleSubmit}>
           <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             required
             className={inputClass}
           />
@@ -66,12 +64,6 @@ function LoginPage() {
             Login
           </Button>
         </form>
-        <p className="text-sm text-gray-500 mt-4 text-center">
-          Don't have an account?{" "}
-          <Link to="/register" className="text-primary-600 hover:underline">
-            Register here
-          </Link>
-        </p>
       </Card>
     </div>
   );

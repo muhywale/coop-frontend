@@ -19,9 +19,6 @@ function WelcomePage() {
         <Link to="/login">
           <Button variant="secondary">Login</Button>
         </Link>
-        <Link to="/register">
-          <Button>New Member? Sign Up</Button>
-        </Link>
       </div>
     </div>
   );

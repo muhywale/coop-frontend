@@ -63,5 +63,9 @@ export const distributePayment = (data) =>
   api.post("/payments/distribute", data);
 export const getMemberLoans = (memberId) =>
   api.get(`/loans/member/${memberId}`);
+export const createMemberLogin = (data) => api.post("/auth/create-login", data);
+export const changePassword = (data) => api.post("/auth/change-password", data);
+export const updateProduct = (id, data) => api.put(`/products/${id}`, data);
+export const deactivateProduct = (id) => api.delete(`/products/${id}`);
 
 export default api;

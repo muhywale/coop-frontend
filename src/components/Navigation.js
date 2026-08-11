@@ -31,6 +31,28 @@ function Navigation({ isAdmin }) {
           <NavLink to="/payment-entry" className={linkClass}>
             Record Payment
           </NavLink>
+          <NavLink to="/products" className={linkClass}>
+            Products
+          </NavLink>
+
+          {/* Hamburger button — only visible on small screens */}
+          <button
+            className="sm:hidden p-2 text-gray-600"
+            onClick={() => setOpen(!open)}
+            aria-label="Toggle menu"
+          >
+            {open ? "✕" : "☰"}
+          </button>
+
+          {/* Desktop nav — inline row, hidden on mobile */}
+          <nav className="hidden sm:flex gap-2">{links}</nav>
+
+          {/* Mobile dropdown — only when open */}
+          {open && (
+            <nav className="sm:hidden absolute top-16 left-0 right-0 bg-white border-b border-gray-200 shadow-lg flex flex-col gap-1 p-4 z-20">
+              {links}
+            </nav>
+          )}
         </>
       )}
       {!isAdmin && (
