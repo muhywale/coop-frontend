@@ -23,31 +23,25 @@ import JournalEntryPage from "./pages/JournalEntryPage";
 import TrialBalancePage from "./pages/TrialBalancePage";
 import IncomeExpenditurePage from "./pages/IncomeExpenditurePage";
 import BalanceSheetPage from "./pages/BalanceSheetPage";
+import Sidebar from "./components/Sidebar";
+import ScrollToTop from "./components/ScrollToTop";
 
 function AppContent() {
   const { user, logout } = useAuth();
 
   return (
-    <div className="min-h-screen bg-gray-50 relative">
+    <div className="min-h-screen bg-gray-50 relative lg:flex">
       <LogoWatermark />
-      <header className="relative z-10 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between shadow-sm">
-        <Link to="/" className="flex items-center gap-3">
-          <Logo className="w-10 h-10" />
-        </Link>
-        {user && (
-          <div className="flex items-center gap-2 sm:gap-4">
-            <Navigation isAdmin={user.role === "admin"} />
-            <button
-              onClick={logout}
-              className="text-xs sm:text-sm text-gray-500 hover:text-red-600 border border-gray-300 rounded-md px-2 sm:px-3 py-1.5 transition whitespace-nowrap"
-            >
-              Logout
-            </button>
-          </div>
-        )}
-      </header>
+      {user && (
+        <Sidebar
+          isAdmin={user.role === "admin"}
+          onLogout={logout}
+          userLabel={user.username || user.email}
+        />
+      )}
 
-      <main className="max-w-6xl mx-auto p-6">
+      <main className="relative z-10 flex-1 min-w-0 p-4 sm:p-6">
+        {" "}
         <Routes>
           <Route path="/login" element={<LoginPage />} />
           <Route
@@ -182,6 +176,7 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
+        <ScrollToTop />
         <AppContent />
       </AuthProvider>
     </BrowserRouter>
