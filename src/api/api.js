@@ -67,5 +67,8 @@ export const createMemberLogin = (data) => api.post("/auth/create-login", data);
 export const changePassword = (data) => api.post("/auth/change-password", data);
 export const updateProduct = (id, data) => api.put(`/products/${id}`, data);
 export const deactivateProduct = (id) => api.delete(`/products/${id}`);
+export const getAccounts = () => api.get("/journal/accounts");
+export const createJournalEntry = (data) => api.post("/journal/entries", data);
+export const getTrialBalance = () => api.get("/journal/trial-balance");
 
 export default api;

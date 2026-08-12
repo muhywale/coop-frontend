@@ -39,6 +39,20 @@ function Navigation({ isAdmin }) {
         Products
       </NavLink>
       <NavLink
+        to="/trial-Balance"
+        className={linkClass}
+        onClick={() => setOpen(false)}
+      >
+        Trial Balance
+      </NavLink>
+      <NavLink
+        to="/journal-entry"
+        className={linkClass}
+        onClick={() => setOpen(false)}
+      >
+        Journal Entry
+      </NavLink>
+      <NavLink
         to="/payments-ledger"
         className={linkClass}
         onClick={() => setOpen(false)}

@@ -19,6 +19,8 @@ import PaymentsLedgerPage from "./pages/PaymentsLedgerPage";
 import PaymentDistributionPage from "./pages/PaymentDistributionPage";
 import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ProductsPage from "./pages/ProductsPage";
+import JournalEntryPage from "./pages/JournalEntryPage";
+import TrialBalancePage from "./pages/TrialBalancePage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -133,6 +135,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <ProductsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/journal-entry"
+            element={
+              <ProtectedRoute adminOnly>
+                <JournalEntryPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/trial-balance"
+            element={
+              <ProtectedRoute adminOnly>
+                <TrialBalancePage />
               </ProtectedRoute>
             }
           />
