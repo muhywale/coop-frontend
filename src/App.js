@@ -21,6 +21,8 @@ import ChangePasswordPage from "./pages/ChangePasswordPage";
 import ProductsPage from "./pages/ProductsPage";
 import JournalEntryPage from "./pages/JournalEntryPage";
 import TrialBalancePage from "./pages/TrialBalancePage";
+import IncomeExpenditurePage from "./pages/IncomeExpenditurePage";
+import BalanceSheetPage from "./pages/BalanceSheetPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -151,6 +153,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <TrialBalancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/income-expenditure"
+            element={
+              <ProtectedRoute adminOnly>
+                <IncomeExpenditurePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/balance-sheet"
+            element={
+              <ProtectedRoute adminOnly>
+                <BalanceSheetPage />
               </ProtectedRoute>
             }
           />

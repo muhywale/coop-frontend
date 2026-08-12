@@ -70,5 +70,7 @@ export const deactivateProduct = (id) => api.delete(`/products/${id}`);
 export const getAccounts = () => api.get("/journal/accounts");
 export const createJournalEntry = (data) => api.post("/journal/entries", data);
 export const getTrialBalance = () => api.get("/journal/trial-balance");
-
+export const getIncomeExpenditure = () =>
+  api.get("/journal/income-expenditure");
+export const getBalanceSheet = () => api.get("/journal/balance-sheet");
 export default api;

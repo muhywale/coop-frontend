@@ -66,6 +66,20 @@ function Navigation({ isAdmin }) {
       >
         Record Payment
       </NavLink>
+      <NavLink
+        to="/income-expenditure"
+        className={linkClass}
+        onClick={() => setOpen(false)}
+      >
+        Income/Expense
+      </NavLink>
+      <NavLink
+        to="/balance-sheet"
+        className={linkClass}
+        onClick={() => setOpen(false)}
+      >
+        Balance-sheet
+      </NavLink>
     </>
   ) : (
     <NavLink
