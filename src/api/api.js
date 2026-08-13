@@ -74,3 +74,9 @@ export const getIncomeExpenditure = () =>
   api.get("/journal/income-expenditure");
 export const getBalanceSheet = () => api.get("/journal/balance-sheet");
 export default api;
+export const getMemberPaymentsLedger = (memberId, from, to) =>
+  api.get(`/dashboard/member/${memberId}/payments-ledger`, {
+    params: { from, to },
+  });
+export const getMyPaymentsLedger = (from, to) =>
+  api.get(`/dashboard/my-payments-ledger`, { params: { from, to } });

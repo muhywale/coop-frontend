@@ -5,6 +5,8 @@ import Badge from "../components/ui/Badge";
 import { Table, TableHead, TableRow } from "../components/ui/Table";
 import { getMyLedger } from "../api/api";
 import CollapsibleSection from "../components/ui/CollapsibleSection"; //
+import PaymentHistoryTable from "../components/PaymentHistoryTable";
+import { getMyPaymentsLedger } from "../api/api";
 
 function MyProfilePage() {
   const [data, setData] = useState(null);
@@ -64,6 +66,12 @@ function MyProfilePage() {
       </div>
       ...
       <div>
+        <div>
+          <h3 className="text-lg font-semibold mb-3">Payment History</h3>
+          <PaymentHistoryTable
+            fetchFn={(from, to) => getMyPaymentsLedger(from, to)}
+          />
+        </div>
         <h3 className="text-lg font-semibold mb-3">Savings by Product</h3>
         {Object.keys(ledger.savingsByProduct).length === 0 ? (
           <p className="text-gray-500">No savings records yet.</p>

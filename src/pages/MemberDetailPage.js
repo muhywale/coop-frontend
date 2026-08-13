@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-//import { getMemberDetail } from "../api/api";
+import PaymentHistoryTable from "../components/PaymentHistoryTable";
 import {
   getMemberDetail,
   getMemberTransactions,
   getMemberLedger,
+  getMemberPaymentsLedger,
 } from "../api/api";
 
 function MemberDetailPage() {
@@ -97,7 +98,12 @@ function MemberDetailPage() {
           {member.email} · {member.phone} · {statusBadge(member.status)}
         </p>
       </div>
-
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Payment History</h3>
+        <PaymentHistoryTable
+          fetchFn={(from, to) => getMemberPaymentsLedger(id, from, to)}
+        />
+      </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <p className="text-sm text-gray-500 font-medium">Savings Balance</p>
