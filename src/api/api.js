@@ -39,8 +39,8 @@ export const recordRepayment = (loanId, data) =>
   api.post(`/loans/${loanId}/repayments`, data);
 export const getRepayments = (loanId) => api.get(`/loans/${loanId}/repayments`);
 // in api.js
-export const getMemberBalance = (memberId) =>
-  api.get(`/contributions/balance/${memberId}`);
+//export const getMemberBalance = (memberId) =>
+//api.get(`/contributions/balance/${memberId}`);
 
 export const getMemberDetail = (id) => api.get(`/members/${id}/detail`);
 //individual member
@@ -80,3 +80,8 @@ export const getMemberPaymentsLedger = (memberId, from, to) =>
   });
 export const getMyPaymentsLedger = (from, to) =>
   api.get(`/dashboard/my-payments-ledger`, { params: { from, to } });
+export const getAccountLedger = (accountId, year) =>
+  api.get(`/journal/accounts/${accountId}/ledger`, { params: { year } });
+export const withdrawFunds = (data) => api.post("/payments/withdraw", data);
+export const getMemberBalance = (memberId, productId) =>
+  api.get(`/contributions/balance/${memberId}`, { params: { productId } });

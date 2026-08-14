@@ -25,6 +25,8 @@ import IncomeExpenditurePage from "./pages/IncomeExpenditurePage";
 import BalanceSheetPage from "./pages/BalanceSheetPage";
 import Sidebar from "./components/Sidebar";
 import ScrollToTop from "./components/ScrollToTop";
+import AccountLedgerPage from "./pages/AccountLedgerPage";
+import WithdrawalPage from "./pages/WithdrawalPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -163,6 +165,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <BalanceSheetPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/account-ledger"
+            element={
+              <ProtectedRoute adminOnly>
+                <AccountLedgerPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/withdrawal"
+            element={
+              <ProtectedRoute adminOnly>
+                <WithdrawalPage />
               </ProtectedRoute>
             }
           />

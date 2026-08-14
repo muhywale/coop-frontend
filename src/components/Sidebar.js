@@ -25,6 +25,8 @@ function Sidebar({ isAdmin, onLogout, userLabel }) {
     { to: "/trial-balance", label: "Trial Balance" },
     { to: "/income-expenditure", label: "Income & Expenditure" },
     { to: "/balance-sheet", label: "Balance Sheet" },
+    { to: "/account-ledger", label: "Account Ledger" },
+    { to: "/withdrawal", label: "Withdrawal" },
   ];
 
   const memberLinks = [{ to: "/my-profile", label: "My Profile" }];

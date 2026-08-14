@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import PaymentHistoryTable from "../components/PaymentHistoryTable";
+import CollapsibleSection from "../components/ui/CollapsibleSection";
+
 import {
   getMemberDetail,
   getMemberTransactions,
@@ -106,15 +108,13 @@ function MemberDetailPage() {
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p className="text-sm text-gray-500 font-medium">Savings Balance</p>
+          <p className="text-sm text-gray-500 font-medium">Total Assets</p>
           <p className="text-3xl font-bold text-green-600 mt-1">
             ₦{parseFloat(savingsBalance).toLocaleString()}
           </p>
         </div>
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p className="text-sm text-gray-500 font-medium">
-            Total Outstanding Loans
-          </p>
+          <p className="text-sm text-gray-500 font-medium">Total Liabilities</p>
           <p className="text-3xl font-bold text-red-600 mt-1">
             ₦{totalOutstanding.toLocaleString()}
           </p>
@@ -178,16 +178,11 @@ function MemberDetailPage() {
                 0,
               );
               return (
-                <div
+                <CollapsibleSection
                   key={productName}
-                  className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
+                  title={productName}
+                  balance={balance}
                 >
-                  <div className="flex justify-between items-center px-6 py-4 border-b border-gray-100">
-                    <h4 className="font-semibold">{productName}</h4>
-                    <span className="text-green-600 font-bold">
-                      ₦{balance.toLocaleString()}
-                    </span>
-                  </div>
                   <table className="w-full text-left">
                     <thead>
                       <tr className="text-gray-500 text-xs uppercase tracking-wide border-b border-gray-100">
@@ -215,57 +210,62 @@ function MemberDetailPage() {
                       ))}
                     </tbody>
                   </table>
-                </div>
+                </CollapsibleSection>
               );
             },
           )
         )}
       </div>
-
       <div>
         <h3 className="text-lg font-semibold mb-3">Loans by Product</h3>
         {Object.keys(ledger.loansByProduct).length === 0 ? (
           <p className="text-gray-500">No loans yet.</p>
         ) : (
           Object.entries(ledger.loansByProduct).map(
-            ([productName, loanList]) => (
-              <div
-                key={productName}
-                className="mb-6 bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
-              >
-                <h4 className="font-semibold px-6 py-4 border-b border-gray-100">
-                  {productName}
-                </h4>
-                <table className="w-full text-left">
-                  <thead>
-                    <tr className="text-gray-500 text-xs uppercase tracking-wide border-b border-gray-100">
-                      <th className="py-2 px-6">Principal</th>
-                      <th className="py-2 px-6">Rate</th>
-                      <th className="py-2 px-6">Date Issued</th>
-                      <th className="py-2 px-6">Outstanding</th>
-                      <th className="py-2 px-6">Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {loanList.map((l) => (
-                      <tr key={l.id} className="border-b border-gray-50">
-                        <td className="py-2 px-6">
-                          ₦{parseFloat(l.principal).toLocaleString()}
-                        </td>
-                        <td className="py-2 px-6">{l.interest_rate}%</td>
-                        <td className="py-2 px-6">
-                          {new Date(l.date_issued).toLocaleDateString()}
-                        </td>
-                        <td className="py-2 px-6 font-medium">
-                          ₦{parseFloat(l.outstanding_balance).toLocaleString()}
-                        </td>
-                        <td className="py-2 px-6">{l.status}</td>
+            ([productName, loanList]) => {
+              const totalOutstanding = loanList.reduce(
+                (sum, l) => sum + parseFloat(l.outstanding_balance),
+                0,
+              );
+              return (
+                <CollapsibleSection
+                  key={productName}
+                  title={productName}
+                  balance={totalOutstanding}
+                  balanceColor="text-red-600"
+                >
+                  <table className="w-full text-left">
+                    <thead>
+                      <tr className="text-gray-500 text-xs uppercase tracking-wide border-b border-gray-100">
+                        <th className="py-2 px-6">Principal</th>
+                        <th className="py-2 px-6">Rate</th>
+                        <th className="py-2 px-6">Date Issued</th>
+                        <th className="py-2 px-6">Outstanding</th>
+                        <th className="py-2 px-6">Status</th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            ),
+                    </thead>
+                    <tbody>
+                      {loanList.map((l) => (
+                        <tr key={l.id} className="border-b border-gray-50">
+                          <td className="py-2 px-6">
+                            ₦{parseFloat(l.principal).toLocaleString()}
+                          </td>
+                          <td className="py-2 px-6">{l.interest_rate}%</td>
+                          <td className="py-2 px-6">
+                            {new Date(l.date_issued).toLocaleDateString()}
+                          </td>
+                          <td className="py-2 px-6 font-medium">
+                            ₦
+                            {parseFloat(l.outstanding_balance).toLocaleString()}
+                          </td>
+                          <td className="py-2 px-6">{l.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CollapsibleSection>
+              );
+            },
           )
         )}
       </div>
