@@ -4,19 +4,15 @@ import { Table, TableHead, TableRow } from "../components/ui/Table";
 
 function TrialBalancePage() {
   const [rows, setRows] = useState([]);
-
+  //const totalDebit = rows.reduce((sum, r) => sum + parseFloat(r.debit), 0);
+  //const totalCredit = rows.reduce((sum, r) => sum + parseFloat(r.credit), 0);
   useEffect(() => {
     getTrialBalance().then((res) => setRows(res.data));
   }, []);
 
-  const totalDebit = rows.reduce(
-    (sum, r) => sum + parseFloat(r.total_debit),
-    0,
-  );
-  const totalCredit = rows.reduce(
-    (sum, r) => sum + parseFloat(r.total_credit),
-    0,
-  );
+  const totalDebit = rows.reduce((sum, r) => sum + parseFloat(r.debit), 0);
+
+  const totalCredit = rows.reduce((sum, r) => sum + parseFloat(r.credit), 0);
 
   return (
     <div>
@@ -30,22 +26,19 @@ function TrialBalancePage() {
         </TableHead>
         <tbody>
           {rows
-            .filter(
-              (r) =>
-                parseFloat(r.total_debit) > 0 || parseFloat(r.total_credit) > 0,
-            )
+            .filter((r) => parseFloat(r.debit) > 0 || parseFloat(r.credit) > 0)
             .map((r) => (
               <TableRow key={r.code}>
                 <td className="py-3 px-6">{r.code}</td>
                 <td className="py-3 px-6">{r.name}</td>
                 <td className="py-3 px-6">
-                  {parseFloat(r.total_debit) > 0
-                    ? `₦${parseFloat(r.total_debit).toLocaleString()}`
+                  {parseFloat(r.debit) > 0
+                    ? `₦${parseFloat(r.debit).toLocaleString()}`
                     : ""}
                 </td>
                 <td className="py-3 px-6">
-                  {parseFloat(r.total_credit) > 0
-                    ? `₦${parseFloat(r.total_credit).toLocaleString()}`
+                  {parseFloat(r.credit) > 0
+                    ? `₦${parseFloat(r.credit).toLocaleString()}`
                     : ""}
                 </td>
               </TableRow>

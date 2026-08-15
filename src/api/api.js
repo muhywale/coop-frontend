@@ -85,3 +85,5 @@ export const getAccountLedger = (accountId, year) =>
 export const withdrawFunds = (data) => api.post("/payments/withdraw", data);
 export const getMemberBalance = (memberId, productId) =>
   api.get(`/contributions/balance/${memberId}`, { params: { productId } });
+export const correctContribution = (id) =>
+  api.delete(`/payments/contributions/${id}/correct`);
