@@ -87,3 +87,7 @@ export const getMemberBalance = (memberId, productId) =>
   api.get(`/contributions/balance/${memberId}`, { params: { productId } });
 export const correctContribution = (id) =>
   api.delete(`/payments/contributions/${id}/correct`);
+export const getMemberAccountsLedger = (id, groupBy, year) =>
+  api.get(`/members/${id}/accounts-ledger`, { params: { groupBy, year } });
+export const getMyAccountsLedger = (groupBy, year) =>
+  api.get(`/members/me/accounts-ledger`, { params: { groupBy, year } });

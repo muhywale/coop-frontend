@@ -2,12 +2,14 @@ import React, { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
 import PaymentHistoryTable from "../components/PaymentHistoryTable";
 import CollapsibleSection from "../components/ui/CollapsibleSection";
+import MemberAccountsLedger from "../components/MemberAccountsLedger";
 
 import {
   getMemberDetail,
   getMemberTransactions,
   getMemberLedger,
   getMemberPaymentsLedger,
+  getMemberAccountsLedger,
 } from "../api/api";
 
 function MemberDetailPage() {
@@ -99,6 +101,14 @@ function MemberDetailPage() {
         <p className="text-gray-500 mt-1">
           {member.email} · {member.phone} · {statusBadge(member.status)}
         </p>
+      </div>
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Account Ledger</h3>
+        <MemberAccountsLedger
+          fetchFn={(groupBy, year) =>
+            getMemberAccountsLedger(id, groupBy, year)
+          }
+        />
       </div>
       <div>
         <h3 className="text-lg font-semibold mb-3">Payment History</h3>

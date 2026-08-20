@@ -6,7 +6,8 @@ import { Table, TableHead, TableRow } from "../components/ui/Table";
 import { getMyLedger } from "../api/api";
 import CollapsibleSection from "../components/ui/CollapsibleSection"; //
 import PaymentHistoryTable from "../components/PaymentHistoryTable";
-import { getMyPaymentsLedger } from "../api/api";
+import MemberAccountsLedger from "../components/MemberAccountsLedger";
+import { getMyPaymentsLedger, getMyAccountsLedger } from "../api/api";
 
 function MyProfilePage() {
   const [data, setData] = useState(null);
@@ -65,6 +66,12 @@ function MyProfilePage() {
         </p>
       </div>
       ...
+      <div>
+        <h3 className="text-lg font-semibold mb-3">Account Ledger</h3>
+        <MemberAccountsLedger
+          fetchFn={(groupBy, year) => getMyAccountsLedger(groupBy, year)}
+        />
+      </div>
       <div>
         <div>
           <h3 className="text-lg font-semibold mb-3">Payment History</h3>

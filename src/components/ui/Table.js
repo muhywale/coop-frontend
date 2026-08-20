@@ -18,9 +18,11 @@ function TableHead({ children }) {
   );
 }
 
-function TableRow({ children }) {
+function TableRow({ children, className = "" }) {
   return (
-    <tr className="border-b border-gray-50 hover:bg-gray-50">{children}</tr>
+    <tr className={`border-b border-gray-50 hover:bg-gray-50 ${className}`}>
+      {children}
+    </tr>
   );
 }
 

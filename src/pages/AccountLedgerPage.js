@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getAccounts, getAccountLedger } from "../api/api";
+import { getAccountTheme } from "../utils/accountColors";
 
 const MONTH_NAMES = [
   "Jan",
@@ -34,6 +35,8 @@ function AccountLedgerPage() {
     }
   }, [selectedAccount, year]);
 
+  const theme = ledger ? getAccountTheme(ledger.account.name) : null;
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Account Ledger</h2>
@@ -60,10 +63,12 @@ function AccountLedgerPage() {
       </div>
 
       {ledger && (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
-          <div className="px-6 py-4 border-b border-gray-100">
-            <h3 className="font-semibold">{ledger.account.name}</h3>
-            <p className="text-sm text-gray-500">
+        <div
+          className={`bg-white rounded-lg shadow-sm border-2 ${theme.accent} overflow-hidden`}
+        >
+          <div className={`px-6 py-4 ${theme.header}`}>
+            <h3 className="font-bold">{ledger.account.name}</h3>
+            <p className="text-xs font-medium">
               Brought forward: ₦{ledger.bf.toLocaleString()}
             </p>
           </div>

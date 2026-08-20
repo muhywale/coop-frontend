@@ -27,7 +27,9 @@ function IncomeExpenditurePage() {
       </Card>
 
       <div>
-        <h3 className="text-lg font-semibold mb-3">Income</h3>
+        <div className="bg-teal-100 text-teal-800 px-6 py-3 rounded-t-lg font-bold">
+          Income
+        </div>{" "}
         <Table>
           <TableHead>
             <th className="py-3 px-6">Account</th>
@@ -51,7 +53,9 @@ function IncomeExpenditurePage() {
       </div>
 
       <div>
-        <h3 className="text-lg font-semibold mb-3">Expenses</h3>
+        <div className="bg-rose-100 text-rose-800 px-6 py-3 rounded-t-lg font-bold">
+          Expenses
+        </div>{" "}
         <Table>
           <TableHead>
             <th className="py-3 px-6">Account</th>

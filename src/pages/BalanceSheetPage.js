@@ -52,19 +52,24 @@ function BalanceSheetPage() {
           ? "✓ Assets = Liabilities + Equity"
           : "⚠ Does not balance — check journal entries"}
       </p>
-
-      <Section title="Assets" rows={data.assets} total={data.totalAssets} />
-      <Section
-        title="Liabilities"
-        rows={data.liabilities}
-        total={data.totalLiabilities}
-      />
-      <Section
-        title="Equity"
-        rows={data.equity}
-        total={data.totalEquity}
-        extra={data.surplus}
-      />
+      <div className="bg-cyan-100 text-cyan-800 px-6 py-3 rounded-t-lg font-bold">
+        <Section title="Assets" rows={data.assets} total={data.totalAssets} />
+      </div>
+      <div className="bg-orange-100 text-orange-800 px-6 py-3 rounded-t-lg font-bold">
+        <Section
+          title="Liabilities"
+          rows={data.liabilities}
+          total={data.totalLiabilities}
+        />
+      </div>
+      <div className="bg-amber-100 text-amber-800 px-6 py-3 rounded-t-lg font-bold">
+        <Section
+          title="Equity"
+          rows={data.equity}
+          total={data.totalEquity}
+          extra={data.surplus}
+        />{" "}
+      </div>
     </div>
   );
 }

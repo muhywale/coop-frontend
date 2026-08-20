@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getPaymentsLedger, correctContribution } from "../api/api";
+import { getAccountTheme } from "../utils/accountColors";
 
 function PaymentsLedgerPage() {
   const [rows, setRows] = useState([]);
@@ -56,11 +57,17 @@ function PaymentsLedgerPage() {
             <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide border-b border-gray-200">
               <th className="py-3 px-4 sticky left-0 bg-gray-50">Date</th>
               <th className="py-3 px-4 sticky left-16 bg-gray-50">Member</th>
-              {columns.map((col) => (
-                <th key={col} className="py-3 px-4 whitespace-nowrap">
-                  {col}
-                </th>
-              ))}
+              {columns.map((col) => {
+                const theme = getAccountTheme(col);
+                return (
+                  <th
+                    key={col}
+                    className={`py-3 px-4 whitespace-nowrap ${theme.header}`}
+                  >
+                    {col}
+                  </th>
+                );
+              })}
               <th className="py-3 px-4 font-bold">Row Total</th>
             </tr>
           </thead>

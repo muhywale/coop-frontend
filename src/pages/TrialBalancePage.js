@@ -10,6 +10,14 @@ function TrialBalancePage() {
     getTrialBalance().then((res) => setRows(res.data));
   }, []);
 
+  const typeTheme = {
+    asset: "bg-cyan-50",
+    liability: "bg-orange-50",
+    equity: "bg-amber-50",
+    income: "bg-teal-50",
+    expense: "bg-rose-50",
+  };
+
   const totalDebit = rows.reduce((sum, r) => sum + parseFloat(r.debit), 0);
 
   const totalCredit = rows.reduce((sum, r) => sum + parseFloat(r.credit), 0);
@@ -28,7 +36,10 @@ function TrialBalancePage() {
           {rows
             .filter((r) => parseFloat(r.debit) > 0 || parseFloat(r.credit) > 0)
             .map((r) => (
-              <TableRow key={r.code}>
+              <TableRow
+                key={r.code}
+                className={typeTheme[r.account_type] || ""}
+              >
                 <td className="py-3 px-6">{r.code}</td>
                 <td className="py-3 px-6">{r.name}</td>
                 <td className="py-3 px-6">
