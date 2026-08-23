@@ -27,6 +27,7 @@ import Sidebar from "./components/Sidebar";
 import ScrollToTop from "./components/ScrollToTop";
 import AccountLedgerPage from "./pages/AccountLedgerPage";
 import WithdrawalPage from "./pages/WithdrawalPage";
+import ExcelImportPage from "./pages/ExcelImportPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -181,6 +182,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <WithdrawalPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/excel-import"
+            element={
+              <ProtectedRoute adminOnly>
+                <ExcelImportPage />
               </ProtectedRoute>
             }
           />

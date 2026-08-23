@@ -18,6 +18,7 @@ function Sidebar({ isAdmin, onLogout, userLabel }) {
     { to: "/products", label: "Products" },
     { to: "/payments-ledger", label: "Payments Ledger" },
     { to: "/payment-entry", label: "Record Payment" },
+    { to: "/excel-import", label: "Excel Import" },
   ];
 
   const accountingLinks = [

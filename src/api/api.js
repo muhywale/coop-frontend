@@ -91,3 +91,14 @@ export const getMemberAccountsLedger = (id, groupBy, year) =>
   api.get(`/members/${id}/accounts-ledger`, { params: { groupBy, year } });
 export const getMyAccountsLedger = (groupBy, year) =>
   api.get(`/members/me/accounts-ledger`, { params: { groupBy, year } });
+export const bulkImportPayments = (data) =>
+  api.post("/payments/bulk-import", data);
+
+export const bulkImportLoanRepayments = (data) =>
+  api.post("/payments/bulk-import-loan-repayments", data);
+
+export const bulkImportLoans = (data) =>
+  api.post("/payments/bulk-import-loans", data);
+
+export const bulkImportOpeningBalances = (data) =>
+  api.post("/payments/bulk-import-opening-balances", data);
