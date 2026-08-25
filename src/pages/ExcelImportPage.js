@@ -6,6 +6,7 @@ import {
   bulkImportLoans,
   bulkImportLoanRepayments,
   bulkImportOpeningBalances,
+  bulkImportOpeningTrialBalance,
 } from "../api/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -27,6 +28,10 @@ function ExcelImportPage() {
   const [repaymentProductId, setRepaymentProductId] = useState("");
   const [asAtDate, setAsAtDate] = useState("2025-12-31");
   const [openingColumnMap, setOpeningColumnMap] = useState({});
+  const [tbCodeColumn, setTbCodeColumn] = useState("");
+  const [tbDebitColumn, setTbDebitColumn] = useState("");
+  const [tbCreditColumn, setTbCreditColumn] = useState("");
+  const [tbAsAtDate, setTbAsAtDate] = useState("2025-12-31");
 
   React.useEffect(() => {
     getProducts().then((res) => {
@@ -225,6 +230,30 @@ function ExcelImportPage() {
     });
   };
 
+  const handleTrialBalanceImport = async () => {
+    if (!tbCodeColumn || (!tbDebitColumn && !tbCreditColumn)) {
+      alert(
+        "Select the account code column and at least one of Debit/Credit columns",
+      );
+      return;
+    }
+    try {
+      const res = await bulkImportOpeningTrialBalance({
+        rows: rawRows,
+        codeColumn: tbCodeColumn,
+        debitColumn: tbDebitColumn,
+        creditColumn: tbCreditColumn,
+        asAtDate: tbAsAtDate,
+      });
+      setResult(res.data);
+    } catch (err) {
+      setResult({
+        message: "Import failed",
+        skipped: [{ reason: err.response?.data?.error || err.message }],
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Import from Excel</h2>
@@ -290,6 +319,78 @@ function ExcelImportPage() {
             Import Opening Balances
           </Button>
         </Card>
+      </Card>
+
+      <Card>
+        <h3 className="font-semibold mb-3">
+          6. Import Opening Trial Balance (Society-wide)
+        </h3>
+        <p className="text-xs text-gray-500 mb-2">
+          Your Excel sheet should have one row per account, with a code matching
+          your Chart of Accounts, plus Debit and Credit columns. Must balance
+          overall (total debit = total credit).
+        </p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="text-xs text-gray-500">As at date</label>
+            <input
+              type="date"
+              value={tbAsAtDate}
+              onChange={(e) => setTbAsAtDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+          <div>
+            <label className="text-xs text-gray-500">Account Code column</label>
+            <select
+              value={tbCodeColumn}
+              onChange={(e) => setTbCodeColumn(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Select...</option>
+              {excelColumns.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500">Debit column</label>
+            <select
+              value={tbDebitColumn}
+              onChange={(e) => setTbDebitColumn(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Select...</option>
+              {excelColumns.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="text-xs text-gray-500">Credit column</label>
+            <select
+              value={tbCreditColumn}
+              onChange={(e) => setTbCreditColumn(e.target.value)}
+              className={inputClass}
+            >
+              <option value="">Select...</option>
+              {excelColumns.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <Button onClick={handleTrialBalanceImport}>
+          Import Opening Trial Balance
+        </Button>
       </Card>
 
       {excelColumns.length > 0 && (

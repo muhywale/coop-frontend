@@ -28,6 +28,7 @@ import ScrollToTop from "./components/ScrollToTop";
 import AccountLedgerPage from "./pages/AccountLedgerPage";
 import WithdrawalPage from "./pages/WithdrawalPage";
 import ExcelImportPage from "./pages/ExcelImportPage";
+import SuperAdminPage from "./pages/SuperAdminPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -37,9 +38,10 @@ function AppContent() {
       <LogoWatermark />
       {user && (
         <Sidebar
-          isAdmin={user.role === "admin"}
+          isAdmin={user.role === "admin" || user.role === "super_admin"}
           onLogout={logout}
           userLabel={user.username || user.email}
+          user={user}
         />
       )}
 
@@ -190,6 +192,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <ExcelImportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/super-admin"
+            element={
+              <ProtectedRoute superAdmin>
+                <SuperAdminPage />
               </ProtectedRoute>
             }
           />

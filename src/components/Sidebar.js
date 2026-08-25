@@ -2,7 +2,9 @@ import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import Logo from "./ui/Logo";
 
-function Sidebar({ isAdmin, onLogout, userLabel }) {
+function Sidebar({ isAdmin, onLogout, userLabel, user }) {
+  console.log("Sidebar received user:", user);
+
   const [open, setOpen] = useState(false);
 
   const linkClass = ({ isActive }) =>
@@ -59,6 +61,20 @@ function Sidebar({ isAdmin, onLogout, userLabel }) {
               Accounting
             </p>
             {renderLinks(accountingLinks, closeOnClick)}
+            {user?.role === "super_admin" && (
+              <>
+                <p className="px-4 pt-4 pb-1 text-xs font-semibold text-gray-400 uppercase">
+                  Platform
+                </p>
+                <NavLink
+                  to="/super-admin"
+                  className={linkClass}
+                  onClick={closeOnClick}
+                >
+                  Super Admin
+                </NavLink>
+              </>
+            )}
           </>
         ) : (
           renderLinks(memberLinks, closeOnClick)

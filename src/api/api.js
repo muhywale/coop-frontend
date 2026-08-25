@@ -102,3 +102,8 @@ export const bulkImportLoans = (data) =>
 
 export const bulkImportOpeningBalances = (data) =>
   api.post("/payments/bulk-import-opening-balances", data);
+export const createCooperative = (data) =>
+  api.post("/super-admin/cooperatives", data);
+export const getCooperatives = () => api.get("/super-admin/cooperatives");
+export const bulkImportOpeningTrialBalance = (data) =>
+  api.post("/payments/bulk-import-opening-trial-balance", data);
