@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { getProducts, createProduct, deactivateProduct } from "../api/api";
+import { getChartOfAccounts } from "../api/api";
 import { Table, TableHead, TableRow } from "../components/ui/Table";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -15,7 +16,12 @@ function ProductsPage() {
     interest_type: "",
     interest_rate: "",
     description: "",
+    linked_account_id: "",
   });
+  const [accounts, setAccounts] = useState([]);
+  useEffect(() => {
+    getChartOfAccounts().then((res) => setAccounts(res.data));
+  }, []);
   const [message, setMessage] = useState("");
 
   const fetchProducts = async () => {
@@ -92,6 +98,20 @@ function ProductsPage() {
             <option value="savings">Savings</option>
             <option value="loan">Loan</option>
             <option value="other">Other (fee, due, fine, etc.)</option>
+          </select>
+          <select
+            name="linked_account_id"
+            value={formData.linked_account_id}
+            onChange={handleChange}
+            required
+            className={inputClass}
+          >
+            <option value="">Select linked ledger account</option>
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.code} — {a.name}
+              </option>
+            ))}
           </select>
           {formData.category === "loan" && (
             <select

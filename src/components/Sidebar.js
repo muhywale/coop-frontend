@@ -30,6 +30,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
     { to: "/balance-sheet", label: "Balance Sheet" },
     { to: "/account-ledger", label: "Account Ledger" },
     { to: "/withdrawal", label: "Withdrawal" },
+    { to: "/chart-of-accounts", label: "Chart of Accounts" },
   ];
 
   const memberLinks = [{ to: "/my-profile", label: "My Profile" }];

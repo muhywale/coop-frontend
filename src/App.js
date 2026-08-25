@@ -29,6 +29,7 @@ import AccountLedgerPage from "./pages/AccountLedgerPage";
 import WithdrawalPage from "./pages/WithdrawalPage";
 import ExcelImportPage from "./pages/ExcelImportPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
+import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -200,6 +201,14 @@ function AppContent() {
             element={
               <ProtectedRoute superAdmin>
                 <SuperAdminPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/chart-of-accounts"
+            element={
+              <ProtectedRoute adminOnly>
+                <ChartOfAccountsPage />
               </ProtectedRoute>
             }
           />

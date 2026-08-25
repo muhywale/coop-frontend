@@ -107,3 +107,8 @@ export const createCooperative = (data) =>
 export const getCooperatives = () => api.get("/super-admin/cooperatives");
 export const bulkImportOpeningTrialBalance = (data) =>
   api.post("/payments/bulk-import-opening-trial-balance", data);
+export const getChartOfAccounts = () => api.get("/chart-of-accounts");
+export const createAccount = (data) => api.post("/chart-of-accounts", data);
+export const updateAccount = (id, data) =>
+  api.put(`/chart-of-accounts/${id}`, data);
+export const deactivateAccount = (id) => api.delete(`/chart-of-accounts/${id}`);
