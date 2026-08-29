@@ -135,27 +135,32 @@ function PaymentDistributionPage() {
             className={inputClass}
           />
         </div>
-
-        <div>
-          <p className="text-xs text-gray-500 font-medium mb-2">
-            Savings Products
-          </p>
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-            {savingsProducts.map((p) => (
-              <div key={p.id}>
-                <label className="text-xs text-gray-500">{p.name}</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={savingsAmounts[p.id] || ""}
-                  onChange={(e) => handleSavingsChange(p.id, e.target.value)}
-                  placeholder="0"
-                  className={inputClass}
-                />
-              </div>
-            ))}
+        {savingsProducts.map((p) => (
+          <div key={p.id}>
+            <label className="text-xs text-gray-500 flex items-center gap-1">
+              {p.name}
+              {!p.linked_account_id && (
+                <span
+                  className="text-red-500 text-xs"
+                  title="Not linked to a ledger account"
+                >
+                  ⚠️
+                </span>
+              )}
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              value={savingsAmounts[p.id] || ""}
+              onChange={(e) => handleSavingsChange(p.id, e.target.value)}
+              disabled={!p.linked_account_id}
+              placeholder={
+                p.linked_account_id ? "0" : "Not linked — cannot post"
+              }
+              className={`${inputClass} ${!p.linked_account_id ? "bg-gray-100 cursor-not-allowed" : ""}`}
+            />
           </div>
-        </div>
+        ))}
 
         <div>
           <p className="text-xs text-gray-500 font-medium mb-2">Other</p>

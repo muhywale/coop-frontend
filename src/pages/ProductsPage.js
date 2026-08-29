@@ -176,6 +176,15 @@ function ProductsPage() {
                   Deactivate
                 </Button>
               </td>
+              <td className="py-3 px-6">
+                {p.linked_account_id ? (
+                  <span className="text-green-600 text-xs">✓ Linked</span>
+                ) : (
+                  <span className="text-red-600 text-xs font-medium">
+                    ⚠ Not linked to ledger
+                  </span>
+                )}
+              </td>
             </TableRow>
           ))}
         </tbody>
