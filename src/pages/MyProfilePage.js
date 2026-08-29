@@ -62,6 +62,7 @@ function MyProfilePage() {
           Welcome, {member.full_name}
         </h2>
         <p className="text-gray-500 mt-1">
+          {member.member_number && `No. ${member.member_number} · `}
           {member.email} · {member.phone} · <Badge status={member.status} />
         </p>
       </div>

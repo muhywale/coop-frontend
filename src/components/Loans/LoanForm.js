@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { createLoan, getProducts } from "../../api/api";
+import { createLoan, getProducts, getMembers } from "../../api/api";
 import Card from "../ui/Card";
 import Button from "../ui/Button";
 
@@ -13,10 +13,13 @@ function LoanForm({ onLoanAdded }) {
     product_id: "",
   });
   const [loanProducts, setLoanProducts] = useState([]);
-
+  const [members, setMembers] = useState([]);
   useEffect(() => {
     getProducts().then((res) => {
       setLoanProducts(res.data.filter((p) => p.category === "loan"));
+    });
+    getMembers().then((res) => {
+      setMembers(res.data);
     });
   }, []);
 
@@ -37,14 +40,22 @@ function LoanForm({ onLoanAdded }) {
         onSubmit={handleSubmit}
         className="grid grid-cols-1 sm:grid-cols-3 gap-4"
       >
-        <input
+        <select
           name="member_id"
-          placeholder="Member ID"
           value={formData.member_id}
           onChange={handleChange}
           required
           className={inputClass}
-        />
+        >
+          <option value="">Select member</option>
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>
+              {m.member_number ? `${m.member_number} — ` : ""}
+              {m.full_name}
+            </option>
+          ))}
+        </select>
+
         <input
           name="principal"
           type="number"

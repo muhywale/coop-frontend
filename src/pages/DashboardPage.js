@@ -58,6 +58,11 @@ function DashboardPage() {
                   to={`/members/${member.member_id}`}
                   className="text-primary-600 hover:underline font-medium"
                 >
+                  {member.member_number && (
+                    <span className="text-gray-400 mr-1">
+                      {member.member_number}
+                    </span>
+                  )}
                   {member.full_name}
                 </Link>
               </td>

@@ -71,6 +71,7 @@ function MemberList() {
       )}
       <Table>
         <TableHead>
+          <th className="py-3 px-6">Member No.</th>
           <th className="py-3 px-6">Name</th>
           <th className="py-3 px-6">Phone</th>
           <th className="py-3 px-6">Status</th>
@@ -80,6 +81,9 @@ function MemberList() {
           {members.map((member) => (
             <React.Fragment key={member.id}>
               <TableRow>
+                <td className="py-3 px-6 text-gray-600">
+                  {member.member_number || "—"}
+                </td>
                 <td className="py-3 px-6">
                   <Link
                     to={`/members/${member.id}`}

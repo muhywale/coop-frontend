@@ -112,3 +112,5 @@ export const createAccount = (data) => api.post("/chart-of-accounts", data);
 export const updateAccount = (id, data) =>
   api.put(`/chart-of-accounts/${id}`, data);
 export const deactivateAccount = (id) => api.delete(`/chart-of-accounts/${id}`);
+export const bulkImportMembers = (data) =>
+  api.post("/payments/bulk-import-members", data);

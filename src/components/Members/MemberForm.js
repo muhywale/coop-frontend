@@ -53,6 +53,13 @@ function MemberForm({ onMemberAdded }) {
           onChange={handleChange}
           className={inputClass}
         />
+        <input
+          name="member_number"
+          placeholder="Member No. (passbook number)"
+          value={formData.member_number}
+          onChange={handleChange}
+          className={inputClass}
+        />
         <Button type="submit" className="sm:col-span-3 w-fit">
           Add Member
         </Button>

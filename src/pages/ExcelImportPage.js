@@ -7,6 +7,7 @@ import {
   bulkImportLoanRepayments,
   bulkImportOpeningBalances,
   bulkImportOpeningTrialBalance,
+  bulkImportMembers,
 } from "../api/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -32,6 +33,8 @@ function ExcelImportPage() {
   const [tbDebitColumn, setTbDebitColumn] = useState("");
   const [tbCreditColumn, setTbCreditColumn] = useState("");
   const [tbAsAtDate, setTbAsAtDate] = useState("2025-12-31");
+  const [memberNumberColumn, setMemberNumberColumn] = useState("");
+  const [fileName, setFileName] = useState("");
 
   React.useEffect(() => {
     getProducts().then((res) => {
@@ -46,6 +49,8 @@ function ExcelImportPage() {
 
   const handleFile = (e) => {
     const file = e.target.files[0];
+    if (!file) return;
+    setFileName(file.name);
     const reader = new FileReader();
     reader.onload = (evt) => {
       const wb = XLSX.read(evt.target.result, {
@@ -53,7 +58,35 @@ function ExcelImportPage() {
         cellDates: true,
       });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      const json = XLSX.utils.sheet_to_json(sheet, { defval: "" });
+
+      // Read as raw array-of-arrays first, to locate the real header row
+      const rawGrid = XLSX.utils.sheet_to_json(sheet, {
+        header: 1,
+        defval: "",
+      });
+
+      // Look for a row that has multiple non-empty cells AND contains something like "NAME"
+      let headerRowIndex = rawGrid.findIndex((row) => {
+        const nonEmptyCount = row.filter(
+          (cell) => String(cell).trim() !== "",
+        ).length;
+        const hasNameLike = row.some((cell) => /name/i.test(String(cell)));
+        return nonEmptyCount >= 3 && hasNameLike;
+      });
+
+      if (headerRowIndex === -1) {
+        // fallback: just find the first row with 3+ non-empty cells
+        headerRowIndex = rawGrid.findIndex(
+          (row) => row.filter((c) => String(c).trim() !== "").length >= 3,
+        );
+      }
+      if (headerRowIndex === -1) headerRowIndex = 0;
+
+      const json = XLSX.utils.sheet_to_json(sheet, {
+        defval: "",
+        range: headerRowIndex,
+      });
+
       if (json.length === 0) return;
       setExcelColumns(Object.keys(json[0]));
       setRawRows(json);
@@ -74,18 +107,15 @@ function ExcelImportPage() {
     return parsedDate.toISOString().slice(0, 10);
   };
 
-  // 1. Savings / Other products import (Shares, Savings, Build Fund, Fine, Dev Levy, etc.)
   const handleSubmit = async () => {
     const rows = rawRows.map((r) => ({
       date: parseRowDate(r),
       member_name: r[nameColumn],
       ...r,
     }));
-
     const batchSize = 300;
     let allSkipped = [];
     let totalPosted = 0;
-
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize);
       setResult({
@@ -104,14 +134,12 @@ function ExcelImportPage() {
         });
       }
     }
-
     setResult({
       message: `Savings/Other import complete — ${totalPosted} entries posted`,
       skipped: allSkipped,
     });
   };
 
-  // 2. Loan issuance import (loans granted)
   const handleLoanImport = async () => {
     if (!loanProductId) {
       alert("Select which loan product these belong to first");
@@ -121,13 +149,11 @@ function ExcelImportPage() {
       alert("Select which column holds the loan amount");
       return;
     }
-
     const rows = rawRows.map((r) => ({
       date: parseRowDate(r),
       member_name: r[nameColumn],
       amount: r[loanAmountColumn],
     }));
-
     const batchSize = 300;
     let allSkipped = [];
     for (let i = 0; i < rows.length; i += batchSize) {
@@ -152,7 +178,6 @@ function ExcelImportPage() {
     setResult({ message: "Loan import complete", skipped: allSkipped });
   };
 
-  // 3. Loan repayment import (matches to each member's single active loan)
   const handleLoanRepImport = async () => {
     if (!loanRepColumn) {
       alert("Select which column holds the loan repayment amount");
@@ -162,13 +187,11 @@ function ExcelImportPage() {
       alert("Select which loan product these repayments are for");
       return;
     }
-
     const rows = rawRows.map((r) => ({
       date: parseRowDate(r),
       member_name: r[nameColumn],
       [loanRepColumn]: r[loanRepColumn],
     }));
-
     const batchSize = 300;
     let allSkipped = [];
     for (let i = 0; i < rows.length; i += batchSize) {
@@ -196,12 +219,9 @@ function ExcelImportPage() {
       skipped: allSkipped,
     });
   };
-  const handleOpeningBalancesImport = async () => {
-    const rows = rawRows.map((r) => ({
-      member_name: r[nameColumn],
-      ...r,
-    }));
 
+  const handleOpeningBalancesImport = async () => {
+    const rows = rawRows.map((r) => ({ member_name: r[nameColumn], ...r }));
     const batchSize = 300;
     let allSkipped = [];
     for (let i = 0; i < rows.length; i += batchSize) {
@@ -254,6 +274,26 @@ function ExcelImportPage() {
     }
   };
 
+  const handleMembersImport = async () => {
+    if (!nameColumn) {
+      alert("Select the Member Name column in step 2 first");
+      return;
+    }
+    try {
+      const res = await bulkImportMembers({
+        rows: rawRows,
+        nameColumn,
+        memberNumberColumn: memberNumberColumn || null,
+      });
+      setResult(res.data);
+    } catch (err) {
+      setResult({
+        message: "Import failed",
+        skipped: [{ reason: err.response?.data?.error || err.message }],
+      });
+    }
+  };
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Import from Excel</h2>
@@ -261,142 +301,21 @@ function ExcelImportPage() {
       <Card>
         <h3 className="font-semibold mb-3">1. Upload File</h3>
         <input type="file" accept=".xlsx,.xls,.csv" onChange={handleFile} />
-        <Card>
-          <h3 className="font-semibold mb-3">
-            Import Opening Balances (as at year-end)
-          </h3>
-          <p className="text-xs text-gray-500 mb-2">
-            Brings forward each member's starting balance for any product —
-            including Consumer/Commodity. Only run this once per product per
-            member.
+        {fileName && (
+          <p className="text-xs text-gray-500 mt-2">
+            Loaded "{fileName}" — {rawRows.length} rows, {excelColumns.length}{" "}
+            columns detected.
           </p>
-          <div className="mb-4">
-            <label className="text-xs text-gray-500">As at date</label>
-            <input
-              type="date"
-              value={asAtDate}
-              onChange={(e) => setAsAtDate(e.target.value)}
-              className={inputClass}
-            />
-          </div>
-          <p className="text-xs text-gray-500 mb-2">
-            Map each Excel column to a product:
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            {excelColumns.map((col) => (
-              <div key={col}>
-                <label className="text-xs text-gray-500">{col}</label>
-                <select
-                  value={openingColumnMap[col] || ""}
-                  onChange={(e) =>
-                    setOpeningColumnMap({
-                      ...openingColumnMap,
-                      [col]: e.target.value,
-                    })
-                  }
-                  className={inputClass}
-                >
-                  <option value="">Ignore</option>
-                  <optgroup label="Savings / Other">
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                  <optgroup label="Loans">
-                    {loanProducts.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                </select>
-              </div>
-            ))}
-          </div>
-          <Button onClick={handleOpeningBalancesImport}>
-            Import Opening Balances
-          </Button>
-        </Card>
-      </Card>
-
-      <Card>
-        <h3 className="font-semibold mb-3">
-          6. Import Opening Trial Balance (Society-wide)
-        </h3>
-        <p className="text-xs text-gray-500 mb-2">
-          Your Excel sheet should have one row per account, with a code matching
-          your Chart of Accounts, plus Debit and Credit columns. Must balance
-          overall (total debit = total credit).
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="text-xs text-gray-500">As at date</label>
-            <input
-              type="date"
-              value={tbAsAtDate}
-              onChange={(e) => setTbAsAtDate(e.target.value)}
-              className={inputClass}
-            />
-          </div>
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-          <div>
-            <label className="text-xs text-gray-500">Account Code column</label>
-            <select
-              value={tbCodeColumn}
-              onChange={(e) => setTbCodeColumn(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Select...</option>
-              {excelColumns.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-gray-500">Debit column</label>
-            <select
-              value={tbDebitColumn}
-              onChange={(e) => setTbDebitColumn(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Select...</option>
-              {excelColumns.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="text-xs text-gray-500">Credit column</label>
-            <select
-              value={tbCreditColumn}
-              onChange={(e) => setTbCreditColumn(e.target.value)}
-              className={inputClass}
-            >
-              <option value="">Select...</option>
-              {excelColumns.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-        <Button onClick={handleTrialBalanceImport}>
-          Import Opening Trial Balance
-        </Button>
+        )}
       </Card>
 
       {excelColumns.length > 0 && (
         <>
           <Card>
             <h3 className="font-semibold mb-3">2. Identify Key Columns</h3>
+            <p className="text-xs text-gray-500 mb-3">
+              Detected columns: {excelColumns.join(", ")}
+            </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="text-xs text-gray-500">
@@ -436,40 +355,164 @@ function ExcelImportPage() {
           </Card>
 
           <Card>
+            <h3 className="font-semibold mb-3">3. Import / Update Members</h3>
+            <p className="text-xs text-gray-500 mb-2">
+              Creates new members, or fills in the passbook number for existing
+              ones matched by name. Safe to run multiple times.
+            </p>
+            <div className="mb-4">
+              <label className="text-xs text-gray-500">
+                Which column is the Member Number (passbook no.)?
+              </label>
+              <select
+                value={memberNumberColumn}
+                onChange={(e) => setMemberNumberColumn(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">None</option>
+                {excelColumns.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={handleMembersImport}>
+              Import / Update Members
+            </Button>
+          </Card>
+
+          <Card>
             <h3 className="font-semibold mb-3">
-              3. Import Savings / Other Products
+              4. Import Opening Trial Balance (Society-wide)
             </h3>
             <p className="text-xs text-gray-500 mb-2">
-              Map each Excel column to a product (Shares, Regular Savings,
-              Building Fund, Fine, Dev Levy, etc.). Leave unmapped columns as
-              "Ignore":
+              One row per account, with a code matching your Chart of Accounts,
+              plus Debit and Credit columns. Must balance overall.
+            </p>
+            <div className="mb-4">
+              <label className="text-xs text-gray-500">As at date</label>
+              <input
+                type="date"
+                value={tbAsAtDate}
+                onChange={(e) => setTbAsAtDate(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              <div>
+                <label className="text-xs text-gray-500">
+                  Account Code column
+                </label>
+                <select
+                  value={tbCodeColumn}
+                  onChange={(e) => setTbCodeColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Debit column</label>
+                <select
+                  value={tbDebitColumn}
+                  onChange={(e) => setTbDebitColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Credit column</label>
+                <select
+                  value={tbCreditColumn}
+                  onChange={(e) => setTbCreditColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <Button onClick={handleTrialBalanceImport}>
+              Import Opening Trial Balance
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="font-semibold mb-3">
+              5. Import Opening Balances (as at year-end)
+            </h3>
+            <p className="text-xs text-gray-500 mb-2">
+              Brings forward each member's starting balance for any product.
+              Only run this once per product per member.
+            </p>
+            <div className="mb-4">
+              <label className="text-xs text-gray-500">As at date</label>
+              <input
+                type="date"
+                value={asAtDate}
+                onChange={(e) => setAsAtDate(e.target.value)}
+                className={inputClass}
+              />
+            </div>
+            <p className="text-xs text-gray-500 mb-2">
+              Map each Excel column to a product:
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
               {excelColumns.map((col) => (
                 <div key={col}>
                   <label className="text-xs text-gray-500">{col}</label>
                   <select
-                    value={columnMap[col] || ""}
+                    value={openingColumnMap[col] || ""}
                     onChange={(e) =>
-                      setColumnMap({ ...columnMap, [col]: e.target.value })
+                      setOpeningColumnMap({
+                        ...openingColumnMap,
+                        [col]: e.target.value,
+                      })
                     }
                     className={inputClass}
                   >
                     <option value="">Ignore</option>
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
-                    ))}
+                    <optgroup label="Savings / Other">
+                      {products.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                    <optgroup label="Loans">
+                      {loanProducts.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.name}
+                        </option>
+                      ))}
+                    </optgroup>
                   </select>
                 </div>
               ))}
             </div>
-            <Button onClick={handleSubmit}>Import Savings / Other</Button>
+            <Button onClick={handleOpeningBalancesImport}>
+              Import Opening Balances
+            </Button>
           </Card>
 
           <Card>
-            <h3 className="font-semibold mb-3">4. Import Loans Granted</h3>
+            <h3 className="font-semibold mb-3">6. Import Loans Granted</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
                 <label className="text-xs text-gray-500">
@@ -508,12 +551,12 @@ function ExcelImportPage() {
             </div>
             <Button onClick={handleLoanImport}>Import Loans</Button>
           </Card>
+
           <Card>
-            <h3 className="font-semibold mb-3">5. Import Loan Repayments</h3>
+            <h3 className="font-semibold mb-3">7. Import Loan Repayments</h3>
             <p className="text-xs text-gray-500 mb-2">
               Matches each repayment to the member's active loan of the selected
-              product type. Run this once per loan type if you have repayments
-              for multiple loan products in this sheet.
+              product type.
             </p>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
               <div>
@@ -554,6 +597,38 @@ function ExcelImportPage() {
             <Button onClick={handleLoanRepImport}>
               Import Loan Repayments
             </Button>
+          </Card>
+
+          <Card>
+            <h3 className="font-semibold mb-3">
+              8. Import Savings / Other Products
+            </h3>
+            <p className="text-xs text-gray-500 mb-2">
+              Map each Excel column to a product. Leave unmapped columns as
+              "Ignore":
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
+              {excelColumns.map((col) => (
+                <div key={col}>
+                  <label className="text-xs text-gray-500">{col}</label>
+                  <select
+                    value={columnMap[col] || ""}
+                    onChange={(e) =>
+                      setColumnMap({ ...columnMap, [col]: e.target.value })
+                    }
+                    className={inputClass}
+                  >
+                    <option value="">Ignore</option>
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <Button onClick={handleSubmit}>Import Savings / Other</Button>
           </Card>
 
           <Card>

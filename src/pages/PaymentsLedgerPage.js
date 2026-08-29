@@ -68,7 +68,7 @@ function PaymentsLedgerPage() {
                   </th>
                 );
               })}
-              <th className="py-3 px-4 font-bold">Row Total</th>
+              <th className="py-3 px-4 font-bold">Amount Paid</th>
             </tr>
           </thead>
           <tbody>

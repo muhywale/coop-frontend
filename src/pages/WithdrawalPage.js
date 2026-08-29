@@ -62,6 +62,21 @@ function WithdrawalPage() {
           <option value="">Select member</option>
           {members.map((m) => (
             <option key={m.id} value={m.id}>
+              {m.member_number ? `${m.member_number} — ` : ""}
+              {m.full_name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="member_id"
+          value={formData.member_id}
+          onChange={handleChange}
+          required
+          className={inputClass}
+        >
+          <option value="">Select member</option>
+          {members.map((m) => (
+            <option key={m.id} value={m.id}>
               {m.full_name}
             </option>
           ))}
