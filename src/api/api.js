@@ -3,7 +3,7 @@ import axios from "axios";
 const API_URL = process.env.REACT_APP_API_URL;
 
 const api = axios.create({
-  baseURL: "coop-backend-production-d638.up.railway.app",
+  baseURL: API_URL,
   withCredentials: true,
 });
 
