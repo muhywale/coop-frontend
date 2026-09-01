@@ -21,7 +21,7 @@ function LoginPage() {
     setError("");
     try {
       const response = await loginUser({ username, password });
-      login(response.data.user, response.data.token);
+      login(response.data.user);
 
       if (response.data.user.must_change_password) {
         navigate("/change-password");
@@ -30,8 +30,10 @@ function LoginPage() {
       } else {
         navigate("/my-profile");
       }
-    } catch {
-      setError("Invalid username or password");
+    } catch (err) {
+      const message =
+        err.response?.data?.error || "Invalid username or password";
+      setError(message);
     }
   };
 
