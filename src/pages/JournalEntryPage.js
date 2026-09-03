@@ -2,14 +2,13 @@ import React, { useState, useEffect } from "react";
 import { getAccounts, createJournalEntry } from "../api/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
+import { toLocalDateString } from "../utils/dateHelper";
 
 const inputClass = "w-full border border-gray-300 rounded-md px-3 py-2";
 
 function JournalEntryPage() {
   const [accounts, setAccounts] = useState([]);
-  const [entryDate, setEntryDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [entryDate, setEntryDate] = useState(toLocalDateString(new Date()));
   const [description, setDescription] = useState("");
   const [lines, setLines] = useState([
     { account_id: "", debit: "", credit: "" },

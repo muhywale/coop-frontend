@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getMembers, getProducts, withdrawFunds } from "../api/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
+import { toLocalDateString } from "../utils/dateHelper";
 
 const inputClass = "w-full border border-gray-300 rounded-md px-3 py-2";
 
@@ -12,7 +13,7 @@ function WithdrawalPage() {
     member_id: "",
     product_id: "",
     amount: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: toLocalDateString(new Date()),
     notes: "",
   });
   const [message, setMessage] = useState("");
@@ -37,7 +38,7 @@ function WithdrawalPage() {
         member_id: "",
         product_id: "",
         amount: "",
-        date: new Date().toISOString().slice(0, 10),
+        date: toLocalDateString(new Date()),
         notes: "",
       });
     } catch (err) {
@@ -63,20 +64,6 @@ function WithdrawalPage() {
           {members.map((m) => (
             <option key={m.id} value={m.id}>
               {m.member_number ? `${m.member_number} — ` : ""}
-              {m.full_name}
-            </option>
-          ))}
-        </select>
-        <select
-          name="member_id"
-          value={formData.member_id}
-          onChange={handleChange}
-          required
-          className={inputClass}
-        >
-          <option value="">Select member</option>
-          {members.map((m) => (
-            <option key={m.id} value={m.id}>
               {m.full_name}
             </option>
           ))}

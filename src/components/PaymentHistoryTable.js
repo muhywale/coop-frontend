@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from "react";
+import toLocalDateString from "../utils/dateHelper";
 
 function getWeekRange(date) {
   const d = new Date(date);
@@ -7,21 +8,19 @@ function getWeekRange(date) {
   monday.setDate(d.getDate() - ((day + 6) % 7));
   const sunday = new Date(monday);
   sunday.setDate(monday.getDate() + 6);
-  return [monday.toISOString().slice(0, 10), sunday.toISOString().slice(0, 10)];
+  return [toLocalDateString(monday), toLocalDateString(sunday)];
 }
 
 function getMonthRange(date) {
   const d = new Date(date);
   const first = new Date(d.getFullYear(), d.getMonth(), 1);
   const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
-  return [first.toISOString().slice(0, 10), last.toISOString().slice(0, 10)];
+  return [toLocalDateString(first), toLocalDateString(last)];
 }
 
 function PaymentHistoryTable({ fetchFn }) {
   const [filterType, setFilterType] = useState("month");
-  const [anchorDate, setAnchorDate] = useState(
-    new Date().toISOString().slice(0, 10),
-  );
+  const [anchorDate, setAnchorDate] = useState(toLocalDateString(new Date()));
   const [rows, setRows] = useState([]);
   const [columns, setColumns] = useState([]);
   const [loading, setLoading] = useState(true);

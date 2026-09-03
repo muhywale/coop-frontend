@@ -7,6 +7,7 @@ import {
 } from "../api/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
+import { toLocalDateString } from "../utils/dateHelper";
 
 const inputClass =
   "w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500";
@@ -21,7 +22,7 @@ function PaymentDistributionPage() {
 
   const [formData, setFormData] = useState({
     member_id: "",
-    date: new Date().toISOString().slice(0, 10),
+    date: toLocalDateString(new Date()),
     loan_id: "",
     loan_repayment: "",
     notes: "",
@@ -79,7 +80,7 @@ function PaymentDistributionPage() {
       setMessage("Payment recorded successfully.");
       setFormData({
         member_id: "",
-        date: new Date().toISOString().slice(0, 10),
+        date: toLocalDateString(new Date()),
         loan_id: "",
         loan_repayment: "",
         notes: "",
@@ -108,20 +109,6 @@ function PaymentDistributionPage() {
             {members.map((m) => (
               <option key={m.id} value={m.id}>
                 {m.member_number ? `${m.member_number} — ` : ""}
-                {m.full_name}
-              </option>
-            ))}
-          </select>
-          <select
-            name="member_id"
-            value={formData.member_id}
-            onChange={handleChange}
-            required
-            className={inputClass}
-          >
-            <option value="">Select member</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
                 {m.full_name}
               </option>
             ))}
