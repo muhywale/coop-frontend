@@ -1,6 +1,49 @@
 import React, { useState, useEffect } from "react";
-import { getPaymentsLedger, correctContribution } from "../api/api";
+import {
+  getPaymentsLedger,
+  editContributionAmount,
+  editRepaymentAmount,
+  deleteRepayment,
+  correctContribution,
+} from "../api/api";
 import { getAccountTheme } from "../utils/accountColors";
+
+function EditableEntry({ transaction, onSave, onDelete }) {
+  const [value, setValue] = useState(transaction.amount);
+  return (
+    <div className="flex justify-between items-center gap-2 py-2 border-b border-gray-100">
+      <input
+        type="number"
+        step="0.01"
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="border border-gray-300 rounded-md px-2 py-1 w-32"
+      />
+      <div className="flex gap-2">
+        <button
+          onClick={() => onSave(transaction.id, value)}
+          className="text-primary-600 text-sm hover:underline"
+        >
+          Save
+        </button>
+        <button
+          onClick={() => {
+            if (
+              window.confirm(
+                "Delete this entry entirely? This reverses its ledger impact and removes the record.",
+              )
+            ) {
+              onDelete(transaction.id, transaction.source);
+            }
+          }}
+          className="text-red-600 text-sm hover:underline"
+        >
+          Delete
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function PaymentsLedgerPage() {
   const [rows, setRows] = useState([]);
@@ -8,9 +51,12 @@ function PaymentsLedgerPage() {
   const [loading, setLoading] = useState(true);
   const [rawData, setRawData] = useState([]);
   const [correcting, setCorrecting] = useState(null);
+  const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
 
   const fetchLedger = async () => {
-    const res = await getPaymentsLedger();
+    const res = await getPaymentsLedger(search, fromDate, toDate);
     const data = res.data;
     setRawData(data);
 
@@ -40,7 +86,7 @@ function PaymentsLedgerPage() {
 
   useEffect(() => {
     fetchLedger();
-  }, []);
+  }, [search, fromDate, toDate]);
 
   if (loading) return <p className="text-gray-500">Loading ledger...</p>;
 
@@ -51,6 +97,28 @@ function PaymentsLedgerPage() {
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-4">Payments Ledger</h2>
+
+      <div className="flex flex-wrap gap-3 mb-4">
+        <input
+          placeholder="Search name or member number..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 flex-1 min-w-[200px]"
+        />
+        <input
+          type="date"
+          value={fromDate}
+          onChange={(e) => setFromDate(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2"
+        />
+        <input
+          type="date"
+          value={toDate}
+          onChange={(e) => setToDate(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2"
+        />
+      </div>
+
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-x-auto">
         <table className="w-full text-left text-sm">
           <thead>
@@ -148,22 +216,28 @@ function PaymentsLedgerPage() {
                 {new Date(correcting.date).toLocaleDateString()}
               </p>
               {correcting.ids.map((t) => (
-                <div
+                <EditableEntry
                   key={t.id}
-                  className="flex justify-between items-center py-2 border-b border-gray-100"
-                >
-                  <span>₦{parseFloat(t.amount).toLocaleString()}</span>
-                  <button
-                    onClick={async () => {
-                      await correctContribution(t.id);
-                      setCorrecting(null);
-                      window.location.reload();
-                    }}
-                    className="text-red-600 text-sm hover:underline"
-                  >
-                    Reverse this entry
-                  </button>
-                </div>
+                  transaction={t}
+                  onSave={async (id, newAmount) => {
+                    if (t.source === "repayment") {
+                      await editRepaymentAmount(id, newAmount);
+                    } else {
+                      await editContributionAmount(id, newAmount);
+                    }
+                    setCorrecting(null);
+                    fetchLedger();
+                  }}
+                  onDelete={async (id, source) => {
+                    if (source === "repayment") {
+                      await deleteRepayment(id);
+                    } else {
+                      await correctContribution(id);
+                    }
+                    setCorrecting(null);
+                    fetchLedger();
+                  }}
+                />
               ))}
               <button
                 onClick={() => setCorrecting(null)}

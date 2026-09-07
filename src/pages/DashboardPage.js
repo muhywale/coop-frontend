@@ -1,80 +1,100 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
-import { getBalancesByProduct } from "../api/api";
-import { Table, TableHead, TableRow } from "../components/ui/Table";
+import { getDashboardStats } from "../api/api";
+import Card from "../components/ui/Card";
 
+const MONTH_NAMES = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
 function DashboardPage() {
-  const [rows, setRows] = useState([]);
-  const [products, setProducts] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState(null);
+  const [year, setYear] = useState(new Date().getFullYear());
 
   useEffect(() => {
-    getBalancesByProduct().then((res) => {
-      const data = res.data;
+    getDashboardStats(year).then((res) => setStats(res.data));
+  }, [year]);
 
-      // build the pivot: one entry per member, with a balance per product name
-      const memberMap = {};
-      const productNames = new Set();
+  if (!stats) return <p className="text-gray-500">Loading...</p>;
 
-      data.forEach((row) => {
-        productNames.add(row.product_name);
-        if (!memberMap[row.member_id]) {
-          memberMap[row.member_id] = {
-            member_id: row.member_id,
-            full_name: row.full_name,
-          };
-        }
-        memberMap[row.member_id][row.product_name] = parseFloat(row.balance);
-      });
-
-      setRows(Object.values(memberMap));
-      setProducts([...productNames]);
-      setLoading(false);
-    });
-  }, []);
-
-  if (loading) return <p className="text-gray-500">Loading dashboard...</p>;
+  const monthlyData = stats.monthlySavings.map((m) => ({
+    month: parseInt(m.month),
+    total: parseFloat(m.total),
+  }));
+  const maxMonthly = Math.max(...monthlyData.map((m) => m.total), 1);
 
   return (
     <div className="space-y-6">
-      <h2 className="text-2xl font-bold text-gray-900">
-        Member Balances Overview
-      </h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-2xl font-bold">Dashboard</h2>
+        <input
+          type="number"
+          value={year}
+          onChange={(e) => setYear(e.target.value)}
+          className="border border-gray-300 rounded-md px-3 py-2 w-28"
+        />
+      </div>
 
-      <Table>
-        <TableHead>
-          <th className="py-3 px-6">Name</th>
-          {products.map((p) => (
-            <th key={p} className="py-3 px-6">
-              {p}
-            </th>
-          ))}
-        </TableHead>
-        <tbody>
-          {rows.map((member) => (
-            <TableRow key={member.member_id}>
-              <td className="py-3 px-6">
-                <Link
-                  to={`/members/${member.member_id}`}
-                  className="text-primary-600 hover:underline font-medium"
-                >
-                  {member.member_number && (
-                    <span className="text-gray-400 mr-1">
-                      {member.member_number}
-                    </span>
-                  )}
-                  {member.full_name}
-                </Link>
-              </td>
-              {products.map((p) => (
-                <td key={p} className="py-3 px-6">
-                  ₦{(member[p] || 0).toLocaleString()}
-                </td>
-              ))}
-            </TableRow>
-          ))}
-        </tbody>
-      </Table>
+      <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
+        <Card>
+          <p className="text-sm text-gray-500">Total Members</p>
+          <p className="text-3xl font-bold">{stats.memberCount}</p>
+        </Card>
+        <Card>
+          <p className="text-sm text-gray-500">Total Savings</p>
+          <p className="text-3xl font-bold text-green-600">
+            ₦{parseFloat(stats.totalSavings).toLocaleString()}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm text-gray-500">Loans Granted ({year})</p>
+          <p className="text-3xl font-bold text-blue-600">
+            ₦{parseFloat(stats.totalLoansGranted).toLocaleString()}
+          </p>
+        </Card>
+        <Card>
+          <p className="text-sm text-gray-500">Outstanding Loans</p>
+          <p className="text-3xl font-bold text-red-600">
+            ₦{parseFloat(stats.totalOutstanding).toLocaleString()}
+          </p>
+        </Card>
+      </div>
+
+      <Card>
+        <h3 className="font-semibold mb-4">Monthly Savings — {year}</h3>
+        <div className="flex items-end gap-2" style={{ height: "200px" }}>
+          {MONTH_NAMES.map((name, i) => {
+            const monthData = monthlyData.find((m) => m.month === i + 1);
+            const value = monthData ? monthData.total : 0;
+            const heightPct = maxMonthly > 0 ? (value / maxMonthly) * 100 : 0;
+            return (
+              <div
+                key={name}
+                className="flex-1 flex flex-col items-center justify-end gap-1 h-full"
+              >
+                <div
+                  className="w-full bg-primary-500 rounded-t transition-all"
+                  style={{
+                    height: `${heightPct}%`,
+                    minHeight: value > 0 ? "4px" : "0px",
+                  }}
+                  title={`₦${value.toLocaleString()}`}
+                />
+                <span className="text-xs text-gray-500">{name}</span>
+              </div>
+            );
+          })}
+        </div>
+      </Card>
     </div>
   );
 }

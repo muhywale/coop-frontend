@@ -10,6 +10,7 @@ import LoansPage from "./pages/LoansPage";
 import MyLoansPage from "./pages/MyLoansPage";
 import RegisterPage from "./pages/RegisterPage";
 import MemberDetailPage from "./pages/MemberDetailPage";
+import MemberBalancesPage from "./pages/MemberBalancesPage";
 import MembersPage from "./pages/MemberPage";
 import MyProfilePage from "./pages/MyProfilePage";
 import DashboardPage from "./pages/DashboardPage";
@@ -97,6 +98,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <MyProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/member-balances"
+            element={
+              <ProtectedRoute adminOnly>
+                <MemberBalancesPage />
               </ProtectedRoute>
             }
           />

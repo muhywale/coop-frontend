@@ -25,8 +25,11 @@ function LoginPage() {
 
       if (response.data.user.must_change_password) {
         navigate("/change-password");
-      } else if (response.data.user.role === "admin") {
-        navigate("/");
+      } else if (
+        response.data.user.role === "admin" ||
+        response.data.user.role === "super_admin"
+      ) {
+        navigate("/dashboard");
       } else {
         navigate("/my-profile");
       }

@@ -46,11 +46,11 @@ export const getMyTransactions = () => api.get("/members/me/transactions");
 export const getContributionsSummary = () =>
   api.get("/dashboard/contributions-summary");
 export const getLoansSummary = () => api.get("/dashboard/loans-summary");
-export const getBalancesByProduct = () =>
-  api.get("/dashboard/balances-by-product");
+export const getBalancesByProduct = () => api.get("/dashboard/member-balances");
 export const getMemberLedger = (id) => api.get(`/members/${id}/ledger`);
 export const getMyLedger = () => api.get("/members/me/ledger");
-export const getPaymentsLedger = () => api.get("/dashboard/payments-ledger");
+export const getPaymentsLedger = (search, from, to) =>
+  api.get("/dashboard/payments-ledger", { params: { search, from, to } });
 export const distributePayment = (data) =>
   api.post("/payments/distribute", data);
 export const getMemberLoans = (memberId) =>
@@ -106,3 +106,13 @@ export const updateAccount = (id, data) =>
 export const deactivateAccount = (id) => api.delete(`/chart-of-accounts/${id}`);
 export const bulkImportMembers = (data) =>
   api.post("/payments/bulk-import-members", data);
+export const editContributionAmount = (id, newAmount) =>
+  api.put(`/payments/contributions/${id}/edit-amount`, {
+    new_amount: newAmount,
+  });
+export const getDashboardStats = (year) =>
+  api.get("/dashboard/stats", { params: { year } });
+export const editRepaymentAmount = (id, newAmount) =>
+  api.put(`/payments/repayments/${id}/edit-amount`, { new_amount: newAmount });
+export const deleteRepayment = (id) =>
+  api.delete(`/payments/repayments/${id}/delete`);

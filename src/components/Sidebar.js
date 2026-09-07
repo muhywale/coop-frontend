@@ -14,6 +14,8 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
 
   const adminLinks = [
     { to: "/dashboard", label: "Dashboard" },
+    { to: "/member-balances", label: "Individual Balances" },
+
     { to: "/", label: "Members", end: true },
     { to: "/contributions", label: "All Transactions" },
     { to: "/loans", label: "Loans" },
