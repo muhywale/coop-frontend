@@ -5,8 +5,10 @@ import {
   editRepaymentAmount,
   deleteRepayment,
   correctContribution,
+  deleteMemberDayRecords,
 } from "../api/api";
 import { getAccountTheme } from "../utils/accountColors";
+import { toLocalDateString } from "../utils/dateHelper";
 
 function EditableEntry({ transaction, onSave, onDelete }) {
   const [value, setValue] = useState(transaction.amount);
@@ -67,7 +69,11 @@ function PaymentsLedgerPage() {
       const colLabel = r.product_name || r.type;
       colSet.add(colLabel);
       if (!grouped[key])
-        grouped[key] = { date: r.date, full_name: r.full_name };
+        grouped[key] = {
+          date: r.date,
+          full_name: r.full_name,
+          member_id: r.member_id,
+        };
       grouped[key][colLabel] =
         (grouped[key][colLabel] || 0) + parseFloat(r.amount);
       if (!grouped[key][`${colLabel}__ids`])
@@ -137,6 +143,7 @@ function PaymentsLedgerPage() {
                 );
               })}
               <th className="py-3 px-4 font-bold">Amount Paid</th>
+              <th className="py-3 px-4">Delete Record</th>
             </tr>
           </thead>
           <tbody>
@@ -175,6 +182,28 @@ function PaymentsLedgerPage() {
                 })}
                 <td className="py-2 px-4 font-bold">
                   ₦{rowTotal(row).toLocaleString()}
+                </td>
+                <td className="py-2 px-4">
+                  <button
+                    onClick={async () => {
+                      const cleanDate = toLocalDateString(new Date(row.date));
+                      if (
+                        window.confirm(
+                          `Delete ALL records for ${row.full_name} on ${new Date(row.date).toLocaleDateString()}? This reverses every transaction for this member on this date.`,
+                        )
+                      ) {
+                        const res = await deleteMemberDayRecords(
+                          row.member_id,
+                          cleanDate,
+                        );
+                        alert(res.data.message);
+                        fetchLedger();
+                      }
+                    }}
+                    className="text-red-600 text-xs hover:underline"
+                  >
+                    Delete Day
+                  </button>
                 </td>
               </tr>
             ))}

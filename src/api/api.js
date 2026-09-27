@@ -116,3 +116,12 @@ export const editRepaymentAmount = (id, newAmount) =>
   api.put(`/payments/repayments/${id}/edit-amount`, { new_amount: newAmount });
 export const deleteRepayment = (id) =>
   api.delete(`/payments/repayments/${id}/delete`);
+export const runInterestAccrual = (asAtDate) =>
+  api.post("/loans/run-interest-accrual", { as_at_date: asAtDate });
+export const getLoanPerformanceReport = () =>
+  api.get("/loans/performance-report");
+export const editLoan = (id, data) => api.put(`/loans/${id}/edit`, data);
+export const deleteMemberDayRecords = (memberId, date) =>
+  api.delete("/payments/member-day-records", {
+    data: { member_id: memberId, date },
+  });

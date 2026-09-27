@@ -35,6 +35,8 @@ function ExcelImportPage() {
   const [tbAsAtDate, setTbAsAtDate] = useState("2025-12-31");
   const [memberNumberColumn, setMemberNumberColumn] = useState("");
   const [fileName, setFileName] = useState("");
+  const [loanDurationValue, setLoanDurationValue] = useState("");
+  const [loanDurationUnit, setLoanDurationUnit] = useState("months");
 
   React.useEffect(() => {
     getProducts().then((res) => {
@@ -156,11 +158,13 @@ function ExcelImportPage() {
       alert("Select which column holds the loan amount");
       return;
     }
+
     const rows = rawRows.map((r) => ({
       date: parseRowDate(r),
       member_name: r[nameColumn],
       amount: r[loanAmountColumn],
     }));
+
     const batchSize = 300;
     let allSkipped = [];
     for (let i = 0; i < rows.length; i += batchSize) {
@@ -173,6 +177,8 @@ function ExcelImportPage() {
         const res = await bulkImportLoans({
           rows: batch,
           productId: loanProductId,
+          durationValue: loanDurationValue || null,
+          durationUnit: loanDurationUnit,
         });
         allSkipped = [...allSkipped, ...(res.data.skipped || [])];
       } catch (err) {
@@ -518,46 +524,40 @@ function ExcelImportPage() {
             </Button>
           </Card>
 
-          <Card>
-            <h3 className="font-semibold mb-3">6. Import Loans Granted</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="text-xs text-gray-500">
-                  Which column is the Loan Amount?
-                </label>
-                <select
-                  value={loanAmountColumn}
-                  onChange={(e) => setLoanAmountColumn(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Select...</option>
-                  {excelColumns.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-xs text-gray-500">
-                  Which loan product are these?
-                </label>
-                <select
-                  value={loanProductId}
-                  onChange={(e) => setLoanProductId(e.target.value)}
-                  className={inputClass}
-                >
-                  <option value="">Select...</option>
-                  {loanProducts.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <Button onClick={handleLoanImport}>Import Loans</Button>
-          </Card>
+    <Card>
+  <h3 className="font-semibold mb-3">6. Import Loans Granted</h3>
+  <p className="text-xs text-gray-500 mb-2">
+    All loans in this batch will use the same duration setting — run separately if your sheet mixes different loan terms.
+  </p>
+  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+    <div>
+      <label className="text-xs text-gray-500">Which column is the Loan Amount?</label>
+      <select value={loanAmountColumn} onChange={(e) => setLoanAmountColumn(e.target.value)} className={inputClass}>
+        <option value="">Select...</option>
+        {excelColumns.map((c) => <option key={c} value={c}>{c}</option>)}
+      </select>
+    </div>
+    <div>
+      <label className="text-xs text-gray-500">Which loan product are these?</label>
+      <select value={loanProductId} onChange={(e) => setLoanProductId(e.target.value)} className={inputClass}>
+        <option value="">Select...</option>
+        {loanProducts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+      </select>
+    </div>
+    <div>
+      <label className="text-xs text-gray-500">Duration value</label>
+      <input type="number" placeholder="e.g. 12" value={loanDurationValue} onChange={(e) => setLoanDurationValue(e.target.value)} className={inputClass} />
+    </div>
+    <div>
+      <label className="text-xs text-gray-500">Duration unit</label>
+      <select value={loanDurationUnit} onChange={(e) => setLoanDurationUnit(e.target.value)} className={inputClass}>
+        <option value="weeks">Weeks</option>
+        <option value="months">Months</option>
+      </select>
+    </div>
+  </div>
+  <Button onClick={handleLoanImport}>Import Loans</Button>
+</Card>
 
           <Card>
             <h3 className="font-semibold mb-3">7. Import Loan Repayments</h3>

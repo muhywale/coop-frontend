@@ -66,6 +66,23 @@ function LoanForm({ onLoanAdded }) {
           required
           className={inputClass}
         />
+        <input
+          type="number"
+          name="duration_value"
+          placeholder="Duration (e.g. 12)"
+          value={formData.duration_value}
+          onChange={handleChange}
+          className={inputClass}
+        />
+        <select
+          name="duration_unit"
+          value={formData.duration_unit}
+          onChange={handleChange}
+          className={inputClass}
+        >
+          <option value="weeks">Weeks</option>
+          <option value="months">Months</option>
+        </select>
         <select
           name="product_id"
           value={formData.product_id}

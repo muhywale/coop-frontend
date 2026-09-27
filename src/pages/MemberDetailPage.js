@@ -1,16 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { useParams, Link } from "react-router-dom";
-import PaymentHistoryTable from "../components/PaymentHistoryTable";
-import CollapsibleSection from "../components/ui/CollapsibleSection";
-import MemberAccountsLedger from "../components/MemberAccountsLedger";
-
-import {
-  getMemberDetail,
-  getMemberTransactions,
-  getMemberLedger,
-  getMemberPaymentsLedger,
-  getMemberAccountsLedger,
-} from "../api/api";
+import { useParams } from "react-router-dom";
+import { getMemberDetail } from "../api/api";
+import Card from "../components/ui/Card";
+import Badge from "../components/ui/Badge";
+import ProfileTabs from "../components/ProfileTabs";
 
 function MemberDetailPage() {
   const { id } = useParams();
@@ -20,29 +13,6 @@ function MemberDetailPage() {
 
   useEffect(() => {
     fetchDetail();
-  }, [id]);
-
-  // inside the component, add a second piece of state:
-  const [transactions, setTransactions] = useState([]);
-
-  useEffect(() => {
-    fetchDetail();
-    fetchTransactions();
-  }, [id]);
-
-  const fetchTransactions = async () => {
-    const res = await getMemberTransactions(id);
-    setTransactions(res.data);
-  };
-
-  const [ledger, setLedger] = useState({
-    savingsByProduct: {},
-    loansByProduct: {},
-  });
-
-  useEffect(() => {
-    fetchDetail();
-    getMemberLedger(id).then((res) => setLedger(res.data));
   }, [id]);
 
   const fetchDetail = async () => {
@@ -56,121 +26,52 @@ function MemberDetailPage() {
     }
   };
 
-  useEffect(() => {
-    fetchDetail();
-    getMemberLedger(id).then((res) => setLedger(res.data));
-  }, [id]);
-
   if (loading) return <p className="text-gray-500">Loading...</p>;
   if (error) return <p className="text-red-600">{error}</p>;
   if (!data) return null;
 
-  const { member, savingsBalance, contributions, loans } = data;
+  const { member, savingsBalance, loans } = data;
   const totalOutstanding = loans.reduce(
     (sum, l) => sum + parseFloat(l.outstanding_balance),
     0,
   );
 
-  const statusBadge = (status) => {
-    const styles = {
-      active: "bg-green-100 text-green-700",
-      paid: "bg-blue-100 text-blue-700",
-      inactive: "bg-gray-100 text-gray-600",
-      defaulted: "bg-red-100 text-red-700",
-    };
-    return (
-      <span
-        className={`text-xs font-medium px-2 py-1 rounded-full ${styles[status] || "bg-gray-100 text-gray-600"}`}
-      >
-        {status}
-      </span>
-    );
-  };
-
   return (
-    <div className="space-y-6">
-      <Link
-        to="/my-profile"
-        className="text-primary-600 hover:underline text-sm"
-      >
-        ← Back to Members
-      </Link>
+    <div>
+      <ProfileTabs baseUrl={`/members/${id}`} />
 
-      <div>
-        <h2 className="text-2xl font-bold text-gray-900">{member.full_name}</h2>
-        <p className="text-gray-500 mt-1">
-          {member.member_number && `No. ${member.member_number} · `}
-          {member.email} · {member.phone} · {statusBadge(member.status)}
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-900">
+            {member.full_name}
+          </h2>
+          <p className="text-gray-500 mt-1">
+            {member.member_number && `No. ${member.member_number} · `}
+            {member.email} · {member.phone} · <Badge status={member.status} />
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <Card>
+            <p className="text-sm text-gray-500 font-medium">Savings Balance</p>
+            <p className="text-3xl font-bold text-green-600 mt-1">
+              ₦{parseFloat(savingsBalance).toLocaleString()}
+            </p>
+          </Card>
+          <Card>
+            <p className="text-sm text-gray-500 font-medium">
+              Total Outstanding Loans
+            </p>
+            <p className="text-3xl font-bold text-red-600 mt-1">
+              ₦{totalOutstanding.toLocaleString()}
+            </p>
+          </Card>
+        </div>
+
+        <p className="text-sm text-gray-500">
+          See the "Ledger" tab above for full savings, loan, and payment
+          history.
         </p>
-      </div>
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Account Ledger</h3>
-        <MemberAccountsLedger
-          fetchFn={(groupBy, year) =>
-            getMemberAccountsLedger(id, groupBy, year)
-          }
-        />
-      </div>
-      <div>
-        <h3 className="text-lg font-semibold mb-3">Payment History</h3>
-        <PaymentHistoryTable
-          fetchFn={(from, to) => getMemberPaymentsLedger(id, from, to)}
-        />
-      </div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p className="text-sm text-gray-500 font-medium">Total Assets</p>
-          <p className="text-3xl font-bold text-green-600 mt-1">
-            ₦{parseFloat(savingsBalance).toLocaleString()}
-          </p>
-        </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <p className="text-sm text-gray-500 font-medium">Total Liabilities</p>
-          <p className="text-3xl font-bold text-red-600 mt-1">
-            ₦{totalOutstanding.toLocaleString()}
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-        <h3 className="text-lg font-semibold px-6 py-4 border-b border-gray-100">
-          Loans
-        </h3>
-        {loans.length === 0 ? (
-          <p className="text-gray-500 px-6 py-4">No loans on record.</p>
-        ) : (
-          <table className="w-full text-left">
-            <thead>
-              <tr className="text-gray-500 text-xs uppercase tracking-wide border-b border-gray-100">
-                <th className="py-3 px-6">Principal</th>
-                <th className="py-3 px-6">Interest</th>
-                <th className="py-3 px-6">Date Issued</th>
-                <th className="py-3 px-6">Outstanding</th>
-                <th className="py-3 px-6">Status</th>
-              </tr>
-            </thead>
-            <tbody>
-              {loans.map((loan) => (
-                <tr
-                  key={loan.id}
-                  className="border-b border-gray-50 hover:bg-gray-50"
-                >
-                  <td className="py-3 px-6">
-                    ₦{parseFloat(loan.principal).toLocaleString()}
-                  </td>
-                  <td className="py-3 px-6">{loan.interest_rate}%</td>
-                  <td className="py-3 px-6">
-                    {new Date(loan.date_issued).toLocaleDateString()}
-                  </td>
-                  <td className="py-3 px-6 font-medium">
-                    ₦{parseFloat(loan.outstanding_balance).toLocaleString()}
-                  </td>
-                  <td className="py-3 px-6">{statusBadge(loan.status)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
       </div>
     </div>
   );

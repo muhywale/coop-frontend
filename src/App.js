@@ -31,6 +31,9 @@ import WithdrawalPage from "./pages/WithdrawalPage";
 import ExcelImportPage from "./pages/ExcelImportPage";
 import SuperAdminPage from "./pages/SuperAdminPage";
 import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
+import LoanPerformancePage from "./pages/LoanPerformancePage";
+import MemberLedgerPage from "./pages/MemberLedgerPage";
+import MyLedgerPage from "./pages/MyLedgerPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -83,6 +86,14 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/members/:id/ledger"
+            element={
+              <ProtectedRoute adminOnly>
+                <MemberLedgerPage />
+              </ProtectedRoute>
+            }
+          />
           <Route path="/welcome" element={<WelcomePage />} />
           <Route path="/register" element={<RegisterPage />} />;
           <Route
@@ -98,6 +109,14 @@ function AppContent() {
             element={
               <ProtectedRoute>
                 <MyProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-profile/ledger"
+            element={
+              <ProtectedRoute>
+                <MyLedgerPage />
               </ProtectedRoute>
             }
           />
@@ -218,6 +237,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <ChartOfAccountsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/loan-performance"
+            element={
+              <ProtectedRoute adminOnly>
+                <LoanPerformancePage />
               </ProtectedRoute>
             }
           />
