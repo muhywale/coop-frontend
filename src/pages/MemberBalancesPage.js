@@ -2,11 +2,13 @@ import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { getBalancesByProduct } from "../api/api";
 import { Table, TableHead, TableRow } from "../components/ui/Table";
+import ExportButtons from "../components/ExportButtons";
 
 function MemberBalancesPage() {
   const [rows, setRows] = useState([]);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [columns, setColumns] = useState([]);
 
   useEffect(() => {
     getBalancesByProduct().then((res) => {
@@ -29,18 +31,38 @@ function MemberBalancesPage() {
 
       setRows(Object.values(memberMap));
       setProducts([...productNames]);
+      setColumns([...productNames]);
+
       setLoading(false);
     });
   }, []);
 
   if (loading) return <p className="text-gray-500">Loading dashboard...</p>;
 
+  const exportColumns = [
+    { key: "full_name", label: "Name" },
+    ...columns.map((col) => ({ key: col, label: col })), // dynamic product columns
+  ];
+
+  const exportData = rows.map((r) => {
+    const clean = { full_name: r.full_name };
+    columns.forEach((col) => {
+      clean[col] = r[col] || 0;
+    });
+    return clean;
+  });
+
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold text-gray-900">
         Member Balances Overview
       </h2>
-
+      <ExportButtons
+        data={exportData}
+        columns={exportColumns}
+        fileName="individual-balances"
+        title="Individual Member Balances"
+      />
       <Table>
         <TableHead>
           <th className="py-3 px-6">Name</th>

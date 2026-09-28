@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { getTrialBalance } from "../api/api";
 import { Table, TableHead, TableRow } from "../components/ui/Table";
+import ExportButtons from "../components/ExportButtons";
 
 function TrialBalancePage() {
   const [rows, setRows] = useState([]);
@@ -18,13 +19,28 @@ function TrialBalancePage() {
     expense: "bg-rose-50",
   };
 
+  const exportColumns = [
+    { key: "code", label: "Code" },
+    { key: "name", label: "Account" },
+    { key: "debit", label: "Debit" },
+    { key: "credit", label: "Credit" },
+  ];
+
   const totalDebit = rows.reduce((sum, r) => sum + parseFloat(r.debit), 0);
 
   const totalCredit = rows.reduce((sum, r) => sum + parseFloat(r.credit), 0);
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">Trial Balance</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold">Trial Balance</h2>
+        <ExportButtons
+          data={rows}
+          columns={exportColumns}
+          fileName="trial-balance"
+          title="Trial Balance"
+        />
+      </div>
       <Table>
         <TableHead>
           <th className="py-3 px-6">Code</th>

@@ -9,6 +9,7 @@ import {
 } from "../api/api";
 import { getAccountTheme } from "../utils/accountColors";
 import { toLocalDateString } from "../utils/dateHelper";
+import ExportButtons from "../components/ExportButtons";
 
 function EditableEntry({ transaction, onSave, onDelete }) {
   const [value, setValue] = useState(transaction.amount);
@@ -99,11 +100,31 @@ function PaymentsLedgerPage() {
   const columnTotal = (col) => rows.reduce((sum, r) => sum + (r[col] || 0), 0);
   const rowTotal = (row) =>
     columns.reduce((sum, col) => sum + (row[col] || 0), 0);
+  const exportColumns = [
+    { key: "date", label: "Date" },
+    { key: "full_name", label: "Member" },
+    ...columns.map((col) => ({ key: col, label: col })),
+  ];
+  const exportData = rows.map((r) => {
+    const clean = {
+      date: new Date(r.date).toLocaleDateString(),
+      full_name: r.full_name,
+    };
+    columns.forEach((col) => {
+      clean[col] = r[col] || 0;
+    });
+    return clean;
+  });
 
   return (
     <div>
       <h2 className="text-2xl font-bold text-gray-900 mb-4">Payments Ledger</h2>
-
+      <ExportButtons
+        data={exportData}
+        columns={exportColumns}
+        fileName="payments-ledger"
+        title="Payments Ledger"
+      />
       <div className="flex flex-wrap gap-3 mb-4">
         <input
           placeholder="Search name or member number..."

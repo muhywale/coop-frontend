@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { getIncomeExpenditure } from "../api/api";
 import { Table, TableHead, TableRow } from "../components/ui/Table";
 import Card from "../components/ui/Card";
+import ExportButtons from "../components/ExportButtons";
 
 function IncomeExpenditurePage() {
   const [data, setData] = useState(null);
@@ -11,10 +12,32 @@ function IncomeExpenditurePage() {
   }, []);
   if (!data) return <p className="text-gray-500">Loading...</p>;
 
+  const exportData = [
+    ...data.income.map((r) => ({
+      section: "Income",
+      name: r.name,
+      amount: r.net,
+    })),
+    ...data.expenses.map((r) => ({
+      section: "Expense",
+      name: r.name,
+      amount: r.net,
+    })),
+  ];
+  const exportColumns = [
+    { key: "section", label: "Section" },
+    { key: "name", label: "Account" },
+    { key: "amount", label: "Amount" },
+  ];
   return (
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Income & Expenditure Statement</h2>
-
+      <ExportButtons
+        data={exportData}
+        columns={exportColumns}
+        fileName="income-expenditure"
+        title="Income & Expenditure Statement"
+      />
       <Card>
         <p className="text-sm text-gray-500 font-medium">
           Surplus for the period
