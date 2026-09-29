@@ -1,77 +1,64 @@
 import React, { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { loginUser } from "../api/api";
-import { useAuth } from "../context/AuthContext";
+import LoanForm from "../components/Loans/LoanForm";
+import LoanList from "../components/Loans/LoanList";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
-import Logo from "../components/ui/Logo";
+import { runInterestAccrual } from "../api/api";
+import { toLocalDateString } from "../utils/dateHelper";
 
 const inputClass =
-  "w-full border border-gray-300 rounded-md px-3 py-2 mb-4 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent";
+  "w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500";
 
-function LoginPage() {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const { login } = useAuth();
-  const navigate = useNavigate();
+function LoansPage() {
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [accrualDate, setAccrualDate] = useState(toLocalDateString(new Date()));
+  const [accrualMessage, setAccrualMessage] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  const handleRunAccrual = async () => {
+    if (
+      !window.confirm(
+        `Run interest accrual for all reducing-balance loans as at ${accrualDate}? This posts new interest charges — do this once per month.`,
+      )
+    )
+      return;
     try {
-      const response = await loginUser({ username, password });
-      login(response.data.user);
-
-      if (response.data.user.must_change_password) {
-        navigate("/change-password");
-      } else if (
-        response.data.user.role === "admin" ||
-        response.data.user.role === "super_admin"
-      ) {
-        navigate("/dashboard");
-      } else {
-        navigate("/my-profile");
-      }
+      const res = await runInterestAccrual(accrualDate);
+      setAccrualMessage(res.data.message);
+      setRefreshKey((k) => k + 1);
     } catch (err) {
-      const message =
-        err.response?.data?.error || "Invalid username or password";
-      setError(message);
+      setAccrualMessage(err.response?.data?.error || "Accrual failed");
     }
   };
 
   return (
-    <div className="max-w-sm mx-auto mt-16">
-      <div className="flex justify-center mb-6">
-        <Logo className="w-16 h-16" />
-      </div>
+    <div className="space-y-6">
+      <LoanForm onLoanAdded={() => setRefreshKey((k) => k + 1)} />
+      <LoanList key={refreshKey} />
+
       <Card>
-        <h2 className="text-xl font-bold mb-6">Login</h2>
-        <form onSubmit={handleSubmit}>
-          <input
-            type="text"
-            placeholder="Username"
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            className={inputClass}
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            className={inputClass}
-          />
-          {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
-          <Button type="submit" className="w-full">
-            Login
-          </Button>
-        </form>
+        <h3 className="font-semibold mb-3">Monthly Interest Accrual</h3>
+        <p className="text-xs text-gray-500 mb-3">
+          Calculates and posts interest for all active reducing-balance loans,
+          based on their current outstanding principal. Run this once per month.
+        </p>
+        <div className="flex items-end gap-3 max-w-md">
+          <div className="flex-1">
+            <label className="text-xs text-gray-500">As at date</label>
+            <input
+              type="date"
+              value={accrualDate}
+              onChange={(e) => setAccrualDate(e.target.value)}
+              className={inputClass}
+            />
+          </div>
+          <Button onClick={handleRunAccrual}>Run Interest Accrual</Button>
+        </div>
+        {accrualMessage && (
+          <p className="text-sm text-primary-700 mt-2">{accrualMessage}</p>
+        )}
       </Card>
     </div>
   );
 }
 
-export default LoginPage;
+export default LoansPage;

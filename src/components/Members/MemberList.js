@@ -5,11 +5,16 @@ import { Table, TableHead, TableRow } from "../ui/Table";
 import Badge from "../ui/Badge";
 import Button from "../ui/Button";
 
+const filterClass = "border border-gray-300 rounded-md px-3 py-2";
+
 function MemberList() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [loginFormFor, setLoginFormFor] = useState(null); // member id currently getting a login
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+
+  const [loginFormFor, setLoginFormFor] = useState(null);
   const [loginData, setLoginData] = useState({
     username: "",
     temp_password: "",
@@ -41,13 +46,12 @@ function MemberList() {
     setLoginFormFor(member.id);
     setLoginData({
       username: `member${member.id}`,
-      temp_password: String(member.id),
+      temp_password: String(member.member_number || member.id),
     });
     setMessage("");
   };
 
   const submitLogin = async (memberId) => {
-    console.log("Save Login clicked for member:", memberId, loginData);
     try {
       await createMemberLogin({ member_id: memberId, ...loginData });
       setMessage(
@@ -62,6 +66,21 @@ function MemberList() {
   if (loading) return <p className="text-gray-500">Loading members...</p>;
   if (error) return <p className="text-red-600">{error}</p>;
 
+  const q = search.trim().toLowerCase();
+  const filteredMembers = members.filter((m) => {
+    if (
+      q &&
+      !(
+        m.full_name?.toLowerCase().includes(q) ||
+        (m.member_number || "").toLowerCase().includes(q) ||
+        (m.phone || "").includes(q)
+      )
+    )
+      return false;
+    if (statusFilter && m.status !== statusFilter) return false;
+    return true;
+  });
+
   return (
     <div>
       {message && (
@@ -69,6 +88,28 @@ function MemberList() {
           {message}
         </p>
       )}
+
+      <div className="flex flex-wrap items-center gap-3 mb-4">
+        <input
+          placeholder="Search by name, member number, or phone..."
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          className={`${filterClass} flex-1 min-w-[200px]`}
+        />
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className={filterClass}
+        >
+          <option value="">All statuses</option>
+          <option value="active">Active</option>
+          <option value="inactive">Inactive</option>
+        </select>
+        <span className="text-xs text-gray-500 whitespace-nowrap">
+          Showing {filteredMembers.length} of {members.length}
+        </span>
+      </div>
+
       <Table>
         <TableHead>
           <th className="py-3 px-6">Member No.</th>
@@ -78,7 +119,7 @@ function MemberList() {
           <th className="py-3 px-6">Actions</th>
         </TableHead>
         <tbody>
-          {members.map((member) => (
+          {filteredMembers.map((member) => (
             <React.Fragment key={member.id}>
               <TableRow>
                 <td className="py-3 px-6 text-gray-600">
@@ -96,24 +137,26 @@ function MemberList() {
                 <td className="py-3 px-6">
                   <Badge status={member.status} />
                 </td>
-                <td className="py-3 px-6 flex gap-2">
-                  <Button
-                    variant="secondary"
-                    onClick={() => openLoginForm(member)}
-                  >
-                    Create Login
-                  </Button>
-                  <Button
-                    variant="danger"
-                    onClick={() => handleDelete(member.id)}
-                  >
-                    Delete
-                  </Button>
+                <td className="py-3 px-6">
+                  <div className="flex gap-2">
+                    <Button
+                      variant="secondary"
+                      onClick={() => openLoginForm(member)}
+                    >
+                      Create Login
+                    </Button>
+                    <Button
+                      variant="danger"
+                      onClick={() => handleDelete(member.id)}
+                    >
+                      Delete
+                    </Button>
+                  </div>
                 </td>
               </TableRow>
               {loginFormFor === member.id && (
                 <tr>
-                  <td colSpan="4" className="bg-gray-50 px-6 py-4">
+                  <td colSpan="5" className="bg-gray-50 px-6 py-4">
                     <div className="flex flex-wrap items-end gap-3">
                       <div>
                         <label className="text-xs text-gray-500">

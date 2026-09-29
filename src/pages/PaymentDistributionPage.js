@@ -1,19 +1,14 @@
 import React, { useState, useEffect } from "react";
-import {
-  getMembers,
-  getMemberLoans,
-  getProducts,
-  distributePayment,
-} from "../api/api";
+import { getMemberLoans, getProducts, distributePayment } from "../api/api";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 import { toLocalDateString } from "../utils/dateHelper";
+import MemberSearchSelect from "../components/MemberSearchSelect";
 
 const inputClass =
   "w-full border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500";
 
 function PaymentDistributionPage() {
-  const [members, setMembers] = useState([]);
   const [savingsProducts, setSavingsProducts] = useState([]);
   const [memberLoans, setMemberLoans] = useState([]);
   const [savingsAmounts, setSavingsAmounts] = useState({}); // { [product_id]: amount }
@@ -30,7 +25,6 @@ function PaymentDistributionPage() {
   const [message, setMessage] = useState("");
 
   useEffect(() => {
-    getMembers().then((res) => setMembers(res.data));
     getProducts().then((res) => {
       setSavingsProducts(res.data.filter((p) => p.category === "savings"));
       setOtherProducts(res.data.filter((p) => p.category === "other"));
@@ -47,6 +41,16 @@ function PaymentDistributionPage() {
     }
   };
 
+  const handleMemberSelect = (memberId) => {
+    setFormData({ ...formData, member_id: memberId, loan_id: "" });
+    if (memberId) {
+      getMemberLoans(memberId).then((res) =>
+        setMemberLoans(res.data.filter((l) => l.status === "active")),
+      );
+    } else {
+      setMemberLoans([]);
+    }
+  };
   const handleSavingsChange = (productId, value) => {
     setSavingsAmounts({ ...savingsAmounts, [productId]: value });
   };
@@ -98,21 +102,11 @@ function PaymentDistributionPage() {
       <h2 className="text-xl font-bold mb-4">Payment Distribution Entry</h2>
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <select
-            name="member_id"
+          <MemberSearchSelect
             value={formData.member_id}
-            onChange={handleChange}
+            onChange={handleMemberSelect}
             required
-            className={inputClass}
-          >
-            <option value="">Select member</option>
-            {members.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.member_number ? `${m.member_number} — ` : ""}
-                {m.full_name}
-              </option>
-            ))}
-          </select>
+          />
           <input
             type="date"
             name="date"

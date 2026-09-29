@@ -125,3 +125,4 @@ export const deleteMemberDayRecords = (memberId, date) =>
   api.delete("/payments/member-day-records", {
     data: { member_id: memberId, date },
   });
+export const deleteLoan = (id) => api.delete(`/loans/${id}`);
