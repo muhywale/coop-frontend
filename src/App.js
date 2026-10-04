@@ -1,7 +1,7 @@
-import React from "react";
+//import React from "react";
 import { BrowserRouter, Routes, Route, Link } from "react-router-dom";
 import { AuthProvider, useAuth } from "./context/AuthContext";
-import Navigation from "./components/Navigation";
+//import Navigation from "./components/Navigation";
 import ProtectedRoute from "./components/ProtectedRoute";
 import LoginPage from "./pages/LoginPage";
 import WelcomePage from "./pages/WelcomePage";
@@ -14,7 +14,7 @@ import MemberBalancesPage from "./pages/MemberBalancesPage";
 import MembersPage from "./pages/MemberPage";
 import MyProfilePage from "./pages/MyProfilePage";
 import DashboardPage from "./pages/DashboardPage";
-import Logo from "./components/ui/Logo";
+//import Logo from "./components/ui/Logo";
 import LogoWatermark from "./components/ui/LogoWatermark";
 import PaymentsLedgerPage from "./pages/PaymentsLedgerPage";
 import PaymentDistributionPage from "./pages/PaymentDistributionPage";
@@ -34,6 +34,7 @@ import ChartOfAccountsPage from "./pages/ChartOfAccountsPage";
 import LoanPerformancePage from "./pages/LoanPerformancePage";
 import MemberLedgerPage from "./pages/MemberLedgerPage";
 import MyLedgerPage from "./pages/MyLedgerPage";
+import SchedulePage from "./pages/SchedulePage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -245,6 +246,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <LoanPerformancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/schedule"
+            element={
+              <ProtectedRoute adminOnly>
+                <SchedulePage />
               </ProtectedRoute>
             }
           />

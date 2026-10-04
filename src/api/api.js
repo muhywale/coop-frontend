@@ -99,11 +99,6 @@ export const createCooperative = (data) =>
 export const getCooperatives = () => api.get("/super-admin/cooperatives");
 export const bulkImportOpeningTrialBalance = (data) =>
   api.post("/payments/bulk-import-opening-trial-balance", data);
-export const getChartOfAccounts = () => api.get("/chart-of-accounts");
-export const createAccount = (data) => api.post("/chart-of-accounts", data);
-export const updateAccount = (id, data) =>
-  api.put(`/chart-of-accounts/${id}`, data);
-export const deactivateAccount = (id) => api.delete(`/chart-of-accounts/${id}`);
 export const bulkImportMembers = (data) =>
   api.post("/payments/bulk-import-members", data);
 export const editContributionAmount = (id, newAmount) =>
@@ -126,3 +121,17 @@ export const deleteMemberDayRecords = (memberId, date) =>
     data: { member_id: memberId, date },
   });
 export const deleteLoan = (id) => api.delete(`/loans/${id}`);
+export const getChartOfAccounts = (includeInactive) =>
+  api.get("/chart-of-accounts", {
+    params: { include_inactive: includeInactive ? "true" : undefined },
+  });
+export const createAccount = (data) => api.post("/chart-of-accounts", data);
+export const updateAccount = (id, data) =>
+  api.put(`/chart-of-accounts/${id}`, data);
+export const deactivateAccount = (id) =>
+  api.put(`/chart-of-accounts/${id}/deactivate`);
+export const reactivateAccount = (id) =>
+  api.put(`/chart-of-accounts/${id}/reactivate`);
+export const deleteAccount = (id) => api.delete(`/chart-of-accounts/${id}`);
+export const getPaymentSchedule = (periodType, date) =>
+  api.get("/schedule", { params: { period_type: periodType, date } });

@@ -3,6 +3,8 @@ import {
   getChartOfAccounts,
   createAccount,
   deactivateAccount,
+  reactivateAccount,
+  deleteAccount,
 } from "../api/api";
 import { Table, TableHead, TableRow } from "../components/ui/Table";
 import Card from "../components/ui/Card";
@@ -12,24 +14,24 @@ const inputClass = "w-full border border-gray-300 rounded-md px-3 py-2";
 
 function ChartOfAccountsPage() {
   const [accounts, setAccounts] = useState([]);
+  const [showInactive, setShowInactive] = useState(false);
   const [formData, setFormData] = useState({
     code: "",
     name: "",
     account_type: "asset",
     normal_balance: "debit",
   });
-  const [message, setMessage] = useState("");
+  const [message, setMessage] = useState(null);
 
   const fetchAccounts = () =>
-    getChartOfAccounts().then((res) => setAccounts(res.data));
+    getChartOfAccounts(showInactive).then((res) => setAccounts(res.data));
   useEffect(() => {
     fetchAccounts();
-  }, []);
+  }, [showInactive]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === "account_type") {
-      // auto-suggest normal_balance based on type
       const suggested = ["asset", "expense"].includes(value)
         ? "debit"
         : "credit";
@@ -45,10 +47,10 @@ function ChartOfAccountsPage() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage("");
+    setMessage(null);
     try {
       await createAccount(formData);
-      setMessage(`Account "${formData.name}" created.`);
+      setMessage({ text: `Account "${formData.name}" created.`, ok: true });
       setFormData({
         code: "",
         name: "",
@@ -57,14 +59,46 @@ function ChartOfAccountsPage() {
       });
       fetchAccounts();
     } catch (err) {
-      setMessage(err.response?.data?.error || "Failed to create account");
+      setMessage({
+        text: err.response?.data?.error || "Failed to create account",
+        ok: false,
+      });
     }
   };
 
   const handleDeactivate = async (id) => {
-    if (!window.confirm("Deactivate this account?")) return;
+    if (
+      !window.confirm(
+        "Deactivate this account? It will be hidden but its history stays intact.",
+      )
+    )
+      return;
     await deactivateAccount(id);
     fetchAccounts();
+  };
+
+  const handleReactivate = async (id) => {
+    await reactivateAccount(id);
+    fetchAccounts();
+  };
+
+  const handleDelete = async (account) => {
+    if (
+      !window.confirm(
+        `Permanently delete "${account.name}"? This only works if it has no transaction history.`,
+      )
+    )
+      return;
+    try {
+      await deleteAccount(account.id);
+      setMessage({ text: `"${account.name}" deleted.`, ok: true });
+      fetchAccounts();
+    } catch (err) {
+      setMessage({
+        text: err.response?.data?.error || "Failed to delete account",
+        ok: false,
+      });
+    }
   };
 
   return (
@@ -118,8 +152,25 @@ function ChartOfAccountsPage() {
             Add Account
           </Button>
         </form>
-        {message && <p className="text-sm mt-3 text-primary-700">{message}</p>}
+        {message && (
+          <p
+            className={`text-sm mt-3 ${message.ok ? "text-green-600" : "text-red-600"}`}
+          >
+            {message.text}
+          </p>
+        )}
       </Card>
+
+      <div className="flex items-center justify-between">
+        <label className="flex items-center gap-2 text-sm text-gray-600">
+          <input
+            type="checkbox"
+            checked={showInactive}
+            onChange={(e) => setShowInactive(e.target.checked)}
+          />
+          Show deactivated accounts too
+        </label>
+      </div>
 
       <Table>
         <TableHead>
@@ -127,6 +178,7 @@ function ChartOfAccountsPage() {
           <th className="py-3 px-6">Name</th>
           <th className="py-3 px-6">Type</th>
           <th className="py-3 px-6">Normal Balance</th>
+          <th className="py-3 px-6">Status</th>
           <th className="py-3 px-6">Actions</th>
         </TableHead>
         <tbody>
@@ -141,9 +193,37 @@ function ChartOfAccountsPage() {
                 {a.normal_balance}
               </td>
               <td className="py-3 px-6">
-                <Button variant="danger" onClick={() => handleDeactivate(a.id)}>
-                  Deactivate
-                </Button>
+                {a.active ? (
+                  <span className="text-xs text-green-700 bg-green-100 px-2 py-1 rounded-full">
+                    Active
+                  </span>
+                ) : (
+                  <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">
+                    Inactive
+                  </span>
+                )}
+              </td>
+              <td className="py-3 px-6">
+                <div className="flex gap-2">
+                  {a.active ? (
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleDeactivate(a.id)}
+                    >
+                      Deactivate
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleReactivate(a.id)}
+                    >
+                      Reactivate
+                    </Button>
+                  )}
+                  <Button variant="danger" onClick={() => handleDelete(a)}>
+                    Delete
+                  </Button>
+                </div>
               </td>
             </TableRow>
           ))}

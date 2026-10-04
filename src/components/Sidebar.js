@@ -37,6 +37,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         { to: "/loan-performance", label: "Loan Performance" },
         { to: "/products", label: "Products" },
         { to: "/withdrawal", label: "Withdrawal" },
+        { to: "/schedule", label: "Payment Schedule" },
       ],
     },
     {

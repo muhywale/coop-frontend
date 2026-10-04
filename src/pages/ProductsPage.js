@@ -17,6 +17,9 @@ function ProductsPage() {
     interest_rate: "",
     description: "",
     linked_account_id: "",
+    is_compulsory: false,
+    expected_amount: "",
+    due_frequency: "monthly",
   });
   const [accounts, setAccounts] = useState([]);
   useEffect(() => {
@@ -143,6 +146,38 @@ function ProductsPage() {
             onChange={handleChange}
             className={inputClass}
           />
+          <label className="flex items-center gap-2 text-sm text-gray-600 sm:col-span-2">
+            <input
+              type="checkbox"
+              checked={formData.is_compulsory}
+              onChange={(e) =>
+                setFormData({ ...formData, is_compulsory: e.target.checked })
+              }
+            />
+            This is a compulsory due (appears on the Payment Schedule)
+          </label>
+          {formData.is_compulsory && (
+            <>
+              <input
+                type="number"
+                step="0.01"
+                name="expected_amount"
+                placeholder="Expected amount per period"
+                value={formData.expected_amount}
+                onChange={handleChange}
+                className={inputClass}
+              />
+              <select
+                name="due_frequency"
+                value={formData.due_frequency}
+                onChange={handleChange}
+                className={inputClass}
+              >
+                <option value="weekly">Weekly</option>
+                <option value="monthly">Monthly</option>
+              </select>
+            </>
+          )}
           <Button type="submit" className="sm:col-span-3 w-fit">
             Add Product
           </Button>
