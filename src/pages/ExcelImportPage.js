@@ -8,7 +8,10 @@ import {
   bulkImportOpeningBalances,
   bulkImportOpeningTrialBalance,
   bulkImportMembers,
+  bulkImportChartOfAccounts,
+  bulkImportProducts,
 } from "../api/api";
+import { toLocalDateString } from "../utils/dateHelper";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 
@@ -27,6 +30,8 @@ function ExcelImportPage() {
   const [loanAmountColumn, setLoanAmountColumn] = useState("");
   const [loanProductId, setLoanProductId] = useState("");
   const [repaymentProductId, setRepaymentProductId] = useState("");
+  const [loanDurationValue, setLoanDurationValue] = useState("");
+  const [loanDurationUnit, setLoanDurationUnit] = useState("months");
   const [asAtDate, setAsAtDate] = useState("2025-12-31");
   const [openingColumnMap, setOpeningColumnMap] = useState({});
   const [tbCodeColumn, setTbCodeColumn] = useState("");
@@ -35,8 +40,23 @@ function ExcelImportPage() {
   const [tbAsAtDate, setTbAsAtDate] = useState("2025-12-31");
   const [memberNumberColumn, setMemberNumberColumn] = useState("");
   const [fileName, setFileName] = useState("");
-  const [loanDurationValue, setLoanDurationValue] = useState("");
-  const [loanDurationUnit, setLoanDurationUnit] = useState("months");
+
+  // Chart of Accounts import columns
+  const [coaCodeColumn, setCoaCodeColumn] = useState("");
+  const [coaNameColumn, setCoaNameColumn] = useState("");
+  const [coaTypeColumn, setCoaTypeColumn] = useState("");
+  const [coaNormalBalanceColumn, setCoaNormalBalanceColumn] = useState("");
+
+  // Products import columns
+  const [prodNameColumn, setProdNameColumn] = useState("");
+  const [prodCategoryColumn, setProdCategoryColumn] = useState("");
+  const [prodInterestRateColumn, setProdInterestRateColumn] = useState("");
+  const [prodInterestTypeColumn, setProdInterestTypeColumn] = useState("");
+  const [prodLinkedAccountCodeColumn, setProdLinkedAccountCodeColumn] =
+    useState("");
+  const [prodIsCompulsoryColumn, setProdIsCompulsoryColumn] = useState("");
+  const [prodExpectedAmountColumn, setProdExpectedAmountColumn] = useState("");
+  const [prodDueFrequencyColumn, setProdDueFrequencyColumn] = useState("");
 
   React.useEffect(() => {
     getProducts().then((res) => {
@@ -61,13 +81,11 @@ function ExcelImportPage() {
       });
       const sheet = wb.Sheets[wb.SheetNames[0]];
 
-      // Read as raw array-of-arrays first, to locate the real header row
       const rawGrid = XLSX.utils.sheet_to_json(sheet, {
         header: 1,
         defval: "",
       });
 
-      // Look for a row that has multiple non-empty cells AND contains something like "NAME"
       let headerRowIndex = rawGrid.findIndex((row) => {
         const nonEmptyCount = row.filter(
           (cell) => String(cell).trim() !== "",
@@ -75,9 +93,7 @@ function ExcelImportPage() {
         const hasNameLike = row.some((cell) => /name/i.test(String(cell)));
         return nonEmptyCount >= 3 && hasNameLike;
       });
-
       if (headerRowIndex === -1) {
-        // fallback: just find the first row with 3+ non-empty cells
         headerRowIndex = rawGrid.findIndex(
           (row) => row.filter((c) => String(c).trim() !== "").length >= 3,
         );
@@ -97,13 +113,6 @@ function ExcelImportPage() {
     reader.readAsBinaryString(file);
   };
 
-  function toLocalDateString(date) {
-    const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, "0");
-    const day = String(date.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day}`;
-  }
-
   const parseRowDate = (r) => {
     let parsedDate;
     try {
@@ -113,29 +122,24 @@ function ExcelImportPage() {
     } catch {
       parsedDate = new Date();
     }
-    return toLocalDateString(parsedDate); // was: parsedDate.toISOString().slice(0, 10)
+    return toLocalDateString(parsedDate);
   };
 
-  const handleSubmit = async () => {
-    const rows = rawRows.map((r) => ({
-      date: parseRowDate(r),
-      member_name: r[nameColumn],
-      ...r,
-    }));
+  const runBatched = async (buildRows, importFn, extra, labelPrefix) => {
+    const rows = buildRows();
     const batchSize = 300;
     let allSkipped = [];
-    let totalPosted = 0;
+    let totalMessage = "";
     for (let i = 0; i < rows.length; i += batchSize) {
       const batch = rows.slice(i, i + batchSize);
       setResult({
-        message: `Importing ${i + batch.length} of ${rows.length}...`,
+        message: `${labelPrefix} ${i + batch.length} of ${rows.length}...`,
         skipped: [],
       });
       try {
-        const res = await bulkImportPayments({ rows: batch, columnMap });
+        const res = await importFn({ rows: batch, ...extra });
         allSkipped = [...allSkipped, ...(res.data.skipped || [])];
-        const match = res.data.message?.match(/\d+/);
-        if (match) totalPosted += parseInt(match[0]);
+        totalMessage = res.data.message;
       } catch (err) {
         allSkipped.push({
           batchStart: i,
@@ -144,12 +148,25 @@ function ExcelImportPage() {
       }
     }
     setResult({
-      message: `Savings/Other import complete — ${totalPosted} entries posted`,
+      message: totalMessage || `${labelPrefix} complete`,
       skipped: allSkipped,
     });
   };
 
-  const handleLoanImport = async () => {
+  const handleSubmit = () =>
+    runBatched(
+      () =>
+        rawRows.map((r) => ({
+          date: parseRowDate(r),
+          member_name: r[nameColumn],
+          ...r,
+        })),
+      bulkImportPayments,
+      { columnMap },
+      "Importing savings/other",
+    );
+
+  const handleLoanImport = () => {
     if (!loanProductId) {
       alert("Select which loan product these belong to first");
       return;
@@ -158,40 +175,24 @@ function ExcelImportPage() {
       alert("Select which column holds the loan amount");
       return;
     }
-
-    const rows = rawRows.map((r) => ({
-      date: parseRowDate(r),
-      member_name: r[nameColumn],
-      amount: r[loanAmountColumn],
-    }));
-
-    const batchSize = 300;
-    let allSkipped = [];
-    for (let i = 0; i < rows.length; i += batchSize) {
-      const batch = rows.slice(i, i + batchSize);
-      setResult({
-        message: `Importing loans ${i + batch.length} of ${rows.length}...`,
-        skipped: [],
-      });
-      try {
-        const res = await bulkImportLoans({
-          rows: batch,
-          productId: loanProductId,
-          durationValue: loanDurationValue || null,
-          durationUnit: loanDurationUnit,
-        });
-        allSkipped = [...allSkipped, ...(res.data.skipped || [])];
-      } catch (err) {
-        allSkipped.push({
-          batchStart: i,
-          reason: err.response?.data?.error || err.message,
-        });
-      }
-    }
-    setResult({ message: "Loan import complete", skipped: allSkipped });
+    return runBatched(
+      () =>
+        rawRows.map((r) => ({
+          date: parseRowDate(r),
+          member_name: r[nameColumn],
+          amount: r[loanAmountColumn],
+        })),
+      bulkImportLoans,
+      {
+        productId: loanProductId,
+        durationValue: loanDurationValue || null,
+        durationUnit: loanDurationUnit,
+      },
+      "Importing loans",
+    );
   };
 
-  const handleLoanRepImport = async () => {
+  const handleLoanRepImport = () => {
     if (!loanRepColumn) {
       alert("Select which column holds the loan repayment amount");
       return;
@@ -200,68 +201,26 @@ function ExcelImportPage() {
       alert("Select which loan product these repayments are for");
       return;
     }
-    const rows = rawRows.map((r) => ({
-      date: parseRowDate(r),
-      member_name: r[nameColumn],
-      [loanRepColumn]: r[loanRepColumn],
-    }));
-    const batchSize = 300;
-    let allSkipped = [];
-    for (let i = 0; i < rows.length; i += batchSize) {
-      const batch = rows.slice(i, i + batchSize);
-      setResult({
-        message: `Importing repayments ${i + batch.length} of ${rows.length}...`,
-        skipped: [],
-      });
-      try {
-        const res = await bulkImportLoanRepayments({
-          rows: batch,
-          loanRepColumn,
-          productId: repaymentProductId,
-        });
-        allSkipped = [...allSkipped, ...(res.data.skipped || [])];
-      } catch (err) {
-        allSkipped.push({
-          batchStart: i,
-          reason: err.response?.data?.error || err.message,
-        });
-      }
-    }
-    setResult({
-      message: "Loan repayment import complete",
-      skipped: allSkipped,
-    });
+    return runBatched(
+      () =>
+        rawRows.map((r) => ({
+          date: parseRowDate(r),
+          member_name: r[nameColumn],
+          [loanRepColumn]: r[loanRepColumn],
+        })),
+      bulkImportLoanRepayments,
+      { loanRepColumn, productId: repaymentProductId },
+      "Importing repayments",
+    );
   };
 
-  const handleOpeningBalancesImport = async () => {
-    const rows = rawRows.map((r) => ({ member_name: r[nameColumn], ...r }));
-    const batchSize = 300;
-    let allSkipped = [];
-    for (let i = 0; i < rows.length; i += batchSize) {
-      const batch = rows.slice(i, i + batchSize);
-      setResult({
-        message: `Importing opening balances ${i + batch.length} of ${rows.length}...`,
-        skipped: [],
-      });
-      try {
-        const res = await bulkImportOpeningBalances({
-          rows: batch,
-          columnMap: openingColumnMap,
-          asAtDate,
-        });
-        allSkipped = [...allSkipped, ...(res.data.skipped || [])];
-      } catch (err) {
-        allSkipped.push({
-          batchStart: i,
-          reason: err.response?.data?.error || err.message,
-        });
-      }
-    }
-    setResult({
-      message: "Opening balances import complete",
-      skipped: allSkipped,
-    });
-  };
+  const handleOpeningBalancesImport = () =>
+    runBatched(
+      () => rawRows.map((r) => ({ member_name: r[nameColumn], ...r })),
+      bulkImportOpeningBalances,
+      { columnMap: openingColumnMap, asAtDate },
+      "Importing opening balances",
+    );
 
   const handleTrialBalanceImport = async () => {
     if (!tbCodeColumn || (!tbDebitColumn && !tbCreditColumn)) {
@@ -299,6 +258,62 @@ function ExcelImportPage() {
         memberNumberColumn: memberNumberColumn || null,
       });
       setResult(res.data);
+    } catch (err) {
+      setResult({
+        message: "Import failed",
+        skipped: [{ reason: err.response?.data?.error || err.message }],
+      });
+    }
+  };
+
+  const handleChartOfAccountsImport = async () => {
+    if (!coaCodeColumn || !coaNameColumn || !coaTypeColumn) {
+      alert("Select the Code, Name, and Type columns first");
+      return;
+    }
+    try {
+      const res = await bulkImportChartOfAccounts({
+        rows: rawRows,
+        codeColumn: coaCodeColumn,
+        nameColumn: coaNameColumn,
+        typeColumn: coaTypeColumn,
+        normalBalanceColumn: coaNormalBalanceColumn || null,
+      });
+      setResult(res.data);
+    } catch (err) {
+      setResult({
+        message: "Import failed",
+        skipped: [{ reason: err.response?.data?.error || err.message }],
+      });
+    }
+  };
+
+  const handleProductsImport = async () => {
+    if (!prodNameColumn || !prodCategoryColumn) {
+      alert("Select the Name and Category columns first");
+      return;
+    }
+    try {
+      const res = await bulkImportProducts({
+        rows: rawRows,
+        nameColumn: prodNameColumn,
+        categoryColumn: prodCategoryColumn,
+        interestRateColumn: prodInterestRateColumn || null,
+        interestTypeColumn: prodInterestTypeColumn || null,
+        linkedAccountCodeColumn: prodLinkedAccountCodeColumn || null,
+        isCompulsoryColumn: prodIsCompulsoryColumn || null,
+        expectedAmountColumn: prodExpectedAmountColumn || null,
+        dueFrequencyColumn: prodDueFrequencyColumn || null,
+      });
+      setResult(res.data);
+      getProducts().then((res2) => {
+        setProducts(
+          res2.data.filter(
+            (p) => p.category === "savings" || p.category === "other",
+          ),
+        );
+        setLoanProducts(res2.data.filter((p) => p.category === "loan"));
+      });
     } catch (err) {
       setResult({
         message: "Import failed",
@@ -368,7 +383,233 @@ function ExcelImportPage() {
           </Card>
 
           <Card>
-            <h3 className="font-semibold mb-3">3. Import / Update Members</h3>
+            <h3 className="font-semibold mb-3">3. Import Chart of Accounts</h3>
+            <p className="text-xs text-gray-500 mb-2">
+              One row per account. Creates any code that doesn't already exist;
+              skips ones that do. Set this up before importing Products so
+              account codes can be linked.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="text-xs text-gray-500">Code column</label>
+                <select
+                  value={coaCodeColumn}
+                  onChange={(e) => setCoaCodeColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Name column</label>
+                <select
+                  value={coaNameColumn}
+                  onChange={(e) => setCoaNameColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Type column (asset/liability/equity/income/expense)
+                </label>
+                <select
+                  value={coaTypeColumn}
+                  onChange={(e) => setCoaTypeColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Normal balance column (optional — auto-filled if blank)
+                </label>
+                <select
+                  value={coaNormalBalanceColumn}
+                  onChange={(e) => setCoaNormalBalanceColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">None</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <Button onClick={handleChartOfAccountsImport}>
+              Import Chart of Accounts
+            </Button>
+          </Card>
+
+          <Card>
+            <h3 className="font-semibold mb-3">4. Import Products</h3>
+            <p className="text-xs text-gray-500 mb-2">
+              One row per product. Matches existing products by name and updates
+              them, or creates new ones. Linked Account Code must match a code
+              already in your Chart of Accounts.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="text-xs text-gray-500">Name column</label>
+                <select
+                  value={prodNameColumn}
+                  onChange={(e) => setProdNameColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Category column (savings/loan/other)
+                </label>
+                <select
+                  value={prodCategoryColumn}
+                  onChange={(e) => setProdCategoryColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Interest rate column
+                </label>
+                <select
+                  value={prodInterestRateColumn}
+                  onChange={(e) => setProdInterestRateColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">None</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Interest type column (one_off/reducing_balance)
+                </label>
+                <select
+                  value={prodInterestTypeColumn}
+                  onChange={(e) => setProdInterestTypeColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">None</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Linked account code column
+                </label>
+                <select
+                  value={prodLinkedAccountCodeColumn}
+                  onChange={(e) =>
+                    setProdLinkedAccountCodeColumn(e.target.value)
+                  }
+                  className={inputClass}
+                >
+                  <option value="">None</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Is compulsory due? column (yes/no)
+                </label>
+                <select
+                  value={prodIsCompulsoryColumn}
+                  onChange={(e) => setProdIsCompulsoryColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">None</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Expected amount column
+                </label>
+                <select
+                  value={prodExpectedAmountColumn}
+                  onChange={(e) => setProdExpectedAmountColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">None</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Due frequency column (weekly/monthly)
+                </label>
+                <select
+                  value={prodDueFrequencyColumn}
+                  onChange={(e) => setProdDueFrequencyColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">None</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <Button onClick={handleProductsImport}>Import Products</Button>
+          </Card>
+
+          <Card>
+            <h3 className="font-semibold mb-3">5. Import / Update Members</h3>
             <p className="text-xs text-gray-500 mb-2">
               Creates new members, or fills in the passbook number for existing
               ones matched by name. Safe to run multiple times.
@@ -397,7 +638,7 @@ function ExcelImportPage() {
 
           <Card>
             <h3 className="font-semibold mb-3">
-              4. Import Opening Trial Balance (Society-wide)
+              6. Import Opening Trial Balance (Society-wide)
             </h3>
             <p className="text-xs text-gray-500 mb-2">
               One row per account, with a code matching your Chart of Accounts,
@@ -468,7 +709,7 @@ function ExcelImportPage() {
 
           <Card>
             <h3 className="font-semibold mb-3">
-              5. Import Opening Balances (as at year-end)
+              7. Import Opening Balances (as at year-end)
             </h3>
             <p className="text-xs text-gray-500 mb-2">
               Brings forward each member's starting balance for any product.
@@ -524,43 +765,74 @@ function ExcelImportPage() {
             </Button>
           </Card>
 
-    <Card>
-  <h3 className="font-semibold mb-3">6. Import Loans Granted</h3>
-  <p className="text-xs text-gray-500 mb-2">
-    All loans in this batch will use the same duration setting — run separately if your sheet mixes different loan terms.
-  </p>
-  <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
-    <div>
-      <label className="text-xs text-gray-500">Which column is the Loan Amount?</label>
-      <select value={loanAmountColumn} onChange={(e) => setLoanAmountColumn(e.target.value)} className={inputClass}>
-        <option value="">Select...</option>
-        {excelColumns.map((c) => <option key={c} value={c}>{c}</option>)}
-      </select>
-    </div>
-    <div>
-      <label className="text-xs text-gray-500">Which loan product are these?</label>
-      <select value={loanProductId} onChange={(e) => setLoanProductId(e.target.value)} className={inputClass}>
-        <option value="">Select...</option>
-        {loanProducts.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-      </select>
-    </div>
-    <div>
-      <label className="text-xs text-gray-500">Duration value</label>
-      <input type="number" placeholder="e.g. 12" value={loanDurationValue} onChange={(e) => setLoanDurationValue(e.target.value)} className={inputClass} />
-    </div>
-    <div>
-      <label className="text-xs text-gray-500">Duration unit</label>
-      <select value={loanDurationUnit} onChange={(e) => setLoanDurationUnit(e.target.value)} className={inputClass}>
-        <option value="weeks">Weeks</option>
-        <option value="months">Months</option>
-      </select>
-    </div>
-  </div>
-  <Button onClick={handleLoanImport}>Import Loans</Button>
-</Card>
+          <Card>
+            <h3 className="font-semibold mb-3">8. Import Loans Granted</h3>
+            <p className="text-xs text-gray-500 mb-2">
+              All loans in this batch will use the same duration setting — run
+              separately if your sheet mixes different loan terms.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 mb-4">
+              <div>
+                <label className="text-xs text-gray-500">
+                  Which column is the Loan Amount?
+                </label>
+                <select
+                  value={loanAmountColumn}
+                  onChange={(e) => setLoanAmountColumn(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {excelColumns.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">
+                  Which loan product are these?
+                </label>
+                <select
+                  value={loanProductId}
+                  onChange={(e) => setLoanProductId(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="">Select...</option>
+                  {loanProducts.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Duration value</label>
+                <input
+                  type="number"
+                  placeholder="e.g. 12"
+                  value={loanDurationValue}
+                  onChange={(e) => setLoanDurationValue(e.target.value)}
+                  className={inputClass}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500">Duration unit</label>
+                <select
+                  value={loanDurationUnit}
+                  onChange={(e) => setLoanDurationUnit(e.target.value)}
+                  className={inputClass}
+                >
+                  <option value="weeks">Weeks</option>
+                  <option value="months">Months</option>
+                </select>
+              </div>
+            </div>
+            <Button onClick={handleLoanImport}>Import Loans</Button>
+          </Card>
 
           <Card>
-            <h3 className="font-semibold mb-3">7. Import Loan Repayments</h3>
+            <h3 className="font-semibold mb-3">9. Import Loan Repayments</h3>
             <p className="text-xs text-gray-500 mb-2">
               Matches each repayment to the member's active loan of the selected
               product type.
@@ -608,7 +880,7 @@ function ExcelImportPage() {
 
           <Card>
             <h3 className="font-semibold mb-3">
-              8. Import Savings / Other Products
+              10. Import Savings / Other Products
             </h3>
             <p className="text-xs text-gray-500 mb-2">
               Map each Excel column to a product. Leave unmapped columns as

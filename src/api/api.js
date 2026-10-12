@@ -135,3 +135,9 @@ export const reactivateAccount = (id) =>
 export const deleteAccount = (id) => api.delete(`/chart-of-accounts/${id}`);
 export const getPaymentSchedule = (periodType, date) =>
   api.get("/schedule", { params: { period_type: periodType, date } });
+export const bulkImportChartOfAccounts = (data) =>
+  api.post("/payments/bulk-import-chart-of-accounts", data);
+export const bulkImportProducts = (data) =>
+  api.post("/payments/bulk-import-products", data);
+export const getMyCooperative = () => api.get("/cooperative");
+export const updateMyCooperative = (data) => api.put("/cooperative", data);

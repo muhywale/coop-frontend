@@ -82,8 +82,18 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
   const SidebarBody = ({ closeOnClick }) => (
     <>
       <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
-        <Logo className="w-9 h-9" />
-        <span className="font-bold text-primary-700 text-sm">Cooperative</span>
+        {user?.logo_url ? (
+          <img
+            src={user.logo_url}
+            alt=""
+            className="w-9 h-9 rounded-full object-cover"
+          />
+        ) : (
+          <Logo className="w-9 h-9" />
+        )}
+        <span className="font-bold text-primary-700 text-sm truncate">
+          {user?.cooperative_name || "Cooperative"}
+        </span>
       </div>
       <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
         {isAdmin ? (

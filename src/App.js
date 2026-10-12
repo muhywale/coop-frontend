@@ -35,6 +35,7 @@ import LoanPerformancePage from "./pages/LoanPerformancePage";
 import MemberLedgerPage from "./pages/MemberLedgerPage";
 import MyLedgerPage from "./pages/MyLedgerPage";
 import SchedulePage from "./pages/SchedulePage";
+import CooperativeSettingsPage from "./pages/CooperativeSettingsPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -254,6 +255,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <SchedulePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute adminOnly>
+                <CooperativeSettingsPage />
               </ProtectedRoute>
             }
           />

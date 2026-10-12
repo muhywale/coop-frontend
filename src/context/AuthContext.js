@@ -8,13 +8,22 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    if (storedUser) {
+      const parsed = JSON.parse(storedUser);
+      setUser(parsed);
+      if (parsed.cooperative_name) {
+        document.title = `${parsed.cooperative_name} — Cooperative Portal`;
+      }
+    }
     setLoading(false);
   }, []);
 
   const login = (userData) => {
     localStorage.setItem("user", JSON.stringify(userData));
     setUser(userData);
+    if (userData.cooperative_name) {
+      document.title = `${userData.cooperative_name} — Cooperative Portal`;
+    }
   };
 
   const logout = async () => {
