@@ -36,6 +36,7 @@ import MemberLedgerPage from "./pages/MemberLedgerPage";
 import MyLedgerPage from "./pages/MyLedgerPage";
 import SchedulePage from "./pages/SchedulePage";
 import CooperativeSettingsPage from "./pages/CooperativeSettingsPage";
+import BankLoanImportPage from "./pages/BankLoanImportPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -263,6 +264,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <CooperativeSettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/bank-loan-import"
+            element={
+              <ProtectedRoute adminOnly>
+                <BankLoanImportPage />
               </ProtectedRoute>
             }
           />

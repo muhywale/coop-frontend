@@ -48,6 +48,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         { to: "/payment-entry", label: "Record Payment" },
         { to: "/all-transactions", label: "All Transactions" },
         { to: "/excel-import", label: "Excel Import" },
+        { to: "/bank-loan-import", label: "Bank Loan Import" },
       ],
     },
     {

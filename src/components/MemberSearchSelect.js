@@ -1,17 +1,25 @@
 import React, { useState, useEffect, useRef } from "react";
 import { getMembers } from "../api/api";
 
-function MemberSearchSelect({ value, onChange, required = false }) {
-  const [members, setMembers] = useState([]);
+function MemberSearchSelect({
+  value,
+  onChange,
+  required = false,
+  members: membersProp,
+  suggestedIds = [],
+}) {
+  const [fetched, setFetched] = useState([]);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef(null);
 
-  useEffect(() => {
-    getMembers().then((res) => setMembers(res.data));
-  }, []);
+  const members = membersProp || fetched;
 
-  // Close the dropdown when clicking outside
+  useEffect(() => {
+    if (membersProp) return;
+    getMembers().then((res) => setFetched(res.data));
+  }, [membersProp]);
+
   useEffect(() => {
     const handler = (e) => {
       if (wrapperRef.current && !wrapperRef.current.contains(e.target))
@@ -24,14 +32,21 @@ function MemberSearchSelect({ value, onChange, required = false }) {
   const label = (m) =>
     `${m.member_number ? m.member_number + " — " : ""}${m.full_name}`;
   const selected = members.find((m) => String(m.id) === String(value));
+  const suggested = new Set(suggestedIds.map(String));
 
   const q = query.trim().toLowerCase();
-  const matches = members.filter(
-    (m) =>
-      !q ||
-      m.full_name.toLowerCase().includes(q) ||
-      (m.member_number || "").toLowerCase().includes(q),
-  );
+  const matches = members
+    .filter(
+      (m) =>
+        !q ||
+        m.full_name.toLowerCase().includes(q) ||
+        (m.member_number || "").toLowerCase().includes(q),
+    )
+    .sort(
+      (a, b) =>
+        Number(suggested.has(String(b.id))) -
+        Number(suggested.has(String(a.id))),
+    );
   const filtered = matches.slice(0, 50);
 
   const select = (m) => {
@@ -42,7 +57,6 @@ function MemberSearchSelect({ value, onChange, required = false }) {
 
   return (
     <div ref={wrapperRef} className="relative">
-      {/* Invisible input so the browser's native "required" check still works */}
       <input
         tabIndex={-1}
         required={required}
@@ -99,9 +113,12 @@ function MemberSearchSelect({ value, onChange, required = false }) {
                     e.preventDefault();
                     select(m);
                   }}
-                  className="w-full text-left px-3 py-2 text-sm hover:bg-primary-50"
+                  className="w-full text-left px-3 py-2 text-sm hover:bg-primary-50 flex justify-between gap-2"
                 >
-                  {label(m)}
+                  <span>{label(m)}</span>
+                  {!q && suggested.has(String(m.id)) && (
+                    <span className="text-xs text-primary-600">suggested</span>
+                  )}
                 </button>
               </li>
             ))

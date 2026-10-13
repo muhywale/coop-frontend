@@ -141,3 +141,5 @@ export const bulkImportProducts = (data) =>
   api.post("/payments/bulk-import-products", data);
 export const getMyCooperative = () => api.get("/cooperative");
 export const updateMyCooperative = (data) => api.put("/cooperative", data);
+export const matchBankList = (rows) => api.post("/bank-import/match", { rows });
+export const importBankLoans = (data) => api.post("/bank-import/loans", data);
