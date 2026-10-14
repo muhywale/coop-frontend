@@ -149,3 +149,4 @@ export const saveAccountCarryForward = (data) =>
 export const getMemberCarryForward = () => api.get("/carry-forward/members");
 export const saveMemberCarryForward = (data) =>
   api.put("/carry-forward/members", data);
+export const recordBulkPayments = (data) => api.post("/bulk-payments", data);
