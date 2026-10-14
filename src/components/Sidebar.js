@@ -61,6 +61,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         { to: "/balance-sheet", label: "Balance Sheet" },
         { to: "/account-ledger", label: "Account Ledger" },
         { to: "/chart-of-accounts", label: "Chart of Accounts" },
+        { to: "/carry-forward", label: "Carry Forward" },
       ],
     },
   ];

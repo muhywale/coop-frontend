@@ -3,7 +3,6 @@ import autoTable from "jspdf-autotable";
 import * as XLSX from "xlsx";
 
 export function exportToExcel(data, columns, fileName) {
-  // data: array of objects, columns: [{ key, label }]
   const rows = data.map((row) => {
     const obj = {};
     columns.forEach((col) => {
@@ -18,16 +17,23 @@ export function exportToExcel(data, columns, fileName) {
 }
 
 export function exportToPDF(data, columns, fileName, title) {
-  const doc = new jsPDF();
+  const doc = new jsPDF({
+    orientation: columns.length > 6 ? "landscape" : "portrait",
+  });
   doc.setFontSize(14);
   doc.text(title || fileName, 14, 15);
 
   autoTable(doc, {
     startY: 22,
     head: [columns.map((c) => c.label)],
-    body: data.map((row) => columns.map((c) => row[c.key])),
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [47, 126, 216] }, // matches your primary-500 blue
+    body: data.map((row) =>
+      columns.map((c) => {
+        const v = row[c.key];
+        return typeof v === "number" ? v.toLocaleString() : (v ?? "");
+      }),
+    ),
+    styles: { fontSize: columns.length > 10 ? 6 : 8 },
+    headStyles: { fillColor: [47, 126, 216] },
   });
 
   doc.save(`${fileName}.pdf`);

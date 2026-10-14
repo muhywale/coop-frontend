@@ -143,3 +143,9 @@ export const getMyCooperative = () => api.get("/cooperative");
 export const updateMyCooperative = (data) => api.put("/cooperative", data);
 export const matchBankList = (rows) => api.post("/bank-import/match", { rows });
 export const importBankLoans = (data) => api.post("/bank-import/loans", data);
+export const getAccountCarryForward = () => api.get("/carry-forward/accounts");
+export const saveAccountCarryForward = (data) =>
+  api.put("/carry-forward/accounts", data);
+export const getMemberCarryForward = () => api.get("/carry-forward/members");
+export const saveMemberCarryForward = (data) =>
+  api.put("/carry-forward/members", data);

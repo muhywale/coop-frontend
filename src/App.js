@@ -37,6 +37,7 @@ import MyLedgerPage from "./pages/MyLedgerPage";
 import SchedulePage from "./pages/SchedulePage";
 import CooperativeSettingsPage from "./pages/CooperativeSettingsPage";
 import BankLoanImportPage from "./pages/BankLoanImportPage";
+import CarryForwardPage from "./pages/CarryForwardPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -272,6 +273,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <BankLoanImportPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/carry-forward"
+            element={
+              <ProtectedRoute adminOnly>
+                <CarryForwardPage />
               </ProtectedRoute>
             }
           />
