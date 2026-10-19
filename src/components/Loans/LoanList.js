@@ -64,10 +64,26 @@ function LoanList() {
   };
 
   const handleDelete = async (loan) => {
-    const ok = window.confirm(
-      `Delete this ${loan.product_name || ""} loan of ₦${parseFloat(loan.principal).toLocaleString()} for ${loan.full_name}?\n\nThis removes the loan AND all its repayment records, and reverses every related ledger entry. This cannot be undone.`,
+    const repaid = Math.max(
+      parseFloat(loan.principal) +
+        parseFloat(loan.interest_amount || 0) -
+        parseFloat(loan.outstanding_balance),
+      0,
     );
-    if (!ok) return;
+    const lines = [
+      `Delete this ${loan.product_name || ""} loan of ₦${parseFloat(loan.principal).toLocaleString()} for ${loan.full_name}?`,
+      "",
+      "The loan and every ledger entry for it (issuance and interest) will be erased as if it was never posted. No reversal entries are left behind.",
+    ];
+    if (repaid > 0.005) {
+      lines.push(
+        "",
+        `⚠ ₦${repaid.toLocaleString()} of repayments recorded against this loan will be erased too, which also removes that cash from your ledger.`,
+      );
+    }
+    lines.push("", "This cannot be undone.");
+    if (!window.confirm(lines.join("\n"))) return;
+
     try {
       const res = await deleteLoan(loan.id);
       setMessage(res.data.message);
