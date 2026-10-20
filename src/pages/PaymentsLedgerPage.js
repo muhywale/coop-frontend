@@ -33,7 +33,7 @@ function EditableEntry({ transaction, onSave, onDelete }) {
           onClick={() => {
             if (
               window.confirm(
-                "Delete this entry entirely? This reverses its ledger impact and removes the record.",
+                "Delete this entry entirely? The payment and its ledger entry are erased, as if it was never recorded. This cannot be undone.",
               )
             ) {
               onDelete(transaction.id, transaction.source);
@@ -210,7 +210,7 @@ function PaymentsLedgerPage() {
                       const cleanDate = toLocalDateString(new Date(row.date));
                       if (
                         window.confirm(
-                          `Delete ALL records for ${row.full_name} on ${new Date(row.date).toLocaleDateString()}? This reverses every transaction for this member on this date.`,
+                          `Delete ALL records for ${row.full_name} on ${new Date(row.date).toLocaleDateString()}? Every payment and repayment for this member on this date, with its ledger entries, is erased. This cannot be undone.`,
                         )
                       ) {
                         const res = await deleteMemberDayRecords(
