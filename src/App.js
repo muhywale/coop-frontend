@@ -38,6 +38,8 @@ import SchedulePage from "./pages/SchedulePage";
 import CooperativeSettingsPage from "./pages/CooperativeSettingsPage";
 import BankLoanImportPage from "./pages/BankLoanImportPage";
 import CarryForwardPage from "./pages/CarryForwardPage";
+import UsersPage from "./pages/UsersPage";
+import BackupPage from "./pages/BackupPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -281,6 +283,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <CarryForwardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/users"
+            element={
+              <ProtectedRoute adminOnly>
+                <UsersPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/backup"
+            element={
+              <ProtectedRoute adminOnly>
+                <BackupPage />
               </ProtectedRoute>
             }
           />

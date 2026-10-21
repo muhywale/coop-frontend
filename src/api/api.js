@@ -150,3 +150,12 @@ export const getMemberCarryForward = () => api.get("/carry-forward/members");
 export const saveMemberCarryForward = (data) =>
   api.put("/carry-forward/members", data);
 export const recordBulkPayments = (data) => api.post("/bulk-payments", data);
+export const getUsers = () => api.get("/users");
+export const createUser = (data) => api.post("/users", data);
+export const updateUserRole = (id, role) =>
+  api.put(`/users/${id}/role`, { role });
+export const resetUserPassword = (id, temp_password) =>
+  api.put(`/users/${id}/reset-password`, { temp_password });
+export const deleteUser = (id) => api.delete(`/users/${id}`);
+export const getBackupExport = (scope) =>
+  api.get("/backup/export", { params: { scope } });

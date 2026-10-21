@@ -64,6 +64,14 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         { to: "/carry-forward", label: "Carry Forward" },
       ],
     },
+    {
+      key: "settings",
+      label: "Settings",
+      links: [
+        { to: "/users", label: "Users" },
+        { to: "/backup", label: "Backup" },
+      ],
+    },
   ];
 
   const memberLinks = [{ to: "/my-profile", label: "My Profile" }];
