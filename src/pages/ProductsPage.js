@@ -18,6 +18,9 @@ const emptyForm = () => ({
   category: "savings",
   interest_type: "",
   interest_rate: "",
+  interest_product_id: "",
+  interest_rules: [],
+  first_payment_offset: "1",
   description: "",
   linked_account_id: "",
   is_compulsory: false,
@@ -30,6 +33,13 @@ const toForm = (p) => ({
   category: p.category,
   interest_type: p.interest_type || "",
   interest_rate: p.interest_rate ?? "",
+  interest_product_id: p.interest_product_id || "",
+  interest_rules: (p.interest_rules || []).map((r) => ({
+    months_after: String(r.months_after),
+    rate: String(r.rate),
+    basis: r.basis,
+  })),
+  first_payment_offset: String(p.first_payment_offset ?? 1),
   description: p.description || "",
   linked_account_id: p.linked_account_id || "",
   is_compulsory: !!p.is_compulsory,
@@ -37,9 +47,26 @@ const toForm = (p) => ({
   due_frequency: p.due_frequency || "monthly",
 });
 
+const validate = (f) => {
+  if (f.category === "loan" && f.interest_type === "scheduled") {
+    if (!f.interest_product_id)
+      return "Choose the payment line that this loan's interest is paid through";
+    const valid = f.interest_rules.filter(
+      (r) => parseFloat(r.rate) > 0 && parseInt(r.months_after, 10) >= 0,
+    );
+    if (valid.length === 0)
+      return "Add at least one interest charge with a rate";
+  }
+  return null;
+};
+
 // Empty strings become null so numeric columns never receive ""
 const toPayload = (f) => {
   const isLoan = f.category === "loan";
+  const usesRate =
+    f.interest_type === "one_off" || f.interest_type === "reducing_balance";
+  const paidSeparately =
+    f.interest_type === "reducing_balance" || f.interest_type === "scheduled";
   return {
     name: f.name.trim(),
     category: f.category,
@@ -47,9 +74,24 @@ const toPayload = (f) => {
     linked_account_id: f.linked_account_id || null,
     interest_type: f.interest_type || null,
     interest_rate:
-      f.interest_rate !== "" && f.interest_rate != null
+      usesRate && f.interest_rate !== "" && f.interest_rate != null
         ? parseFloat(f.interest_rate)
         : null,
+    interest_product_id:
+      isLoan && paidSeparately && f.interest_product_id
+        ? Number(f.interest_product_id)
+        : null,
+    interest_rules:
+      isLoan && f.interest_type === "scheduled"
+        ? f.interest_rules
+            .map((r) => ({
+              months_after: parseInt(r.months_after, 10),
+              rate: parseFloat(r.rate),
+              basis: r.basis,
+            }))
+            .filter((r) => r.rate > 0 && r.months_after >= 0)
+        : [],
+    first_payment_offset: isLoan ? Number(f.first_payment_offset) : 1,
     is_compulsory: !isLoan && f.is_compulsory,
     expected_amount:
       !isLoan && f.is_compulsory && f.expected_amount !== ""
@@ -59,13 +101,58 @@ const toPayload = (f) => {
   };
 };
 
-function ProductFields({ form, setForm, accounts, categoryLocked }) {
+const rulesSummary = (rules) =>
+  (rules || [])
+    .map(
+      (r) =>
+        `${parseFloat(r.rate)}% of ${r.basis === "balance" ? "balance" : "loan amount"} ${
+          r.months_after === 0
+            ? "with first payment"
+            : `${r.months_after} months later`
+        }`,
+    )
+    .join(" · ");
+
+function ProductFields({
+  form,
+  setForm,
+  accounts,
+  interestProducts,
+  categoryLocked,
+}) {
   const set = (field) => (e) =>
     setForm({
       ...form,
       [field]: e.target.type === "checkbox" ? e.target.checked : e.target.value,
     });
   const isLoan = form.category === "loan";
+  const usesRate =
+    form.interest_type === "one_off" ||
+    form.interest_type === "reducing_balance";
+  const paidSeparately =
+    form.interest_type === "reducing_balance" ||
+    form.interest_type === "scheduled";
+
+  const updateRule = (index, field, value) =>
+    setForm({
+      ...form,
+      interest_rules: form.interest_rules.map((r, i) =>
+        i === index ? { ...r, [field]: value } : r,
+      ),
+    });
+  const addRule = () =>
+    setForm({
+      ...form,
+      interest_rules: [
+        ...form.interest_rules,
+        { months_after: "0", rate: "", basis: "principal" },
+      ],
+    });
+  const removeRule = (index) =>
+    setForm({
+      ...form,
+      interest_rules: form.interest_rules.filter((_, i) => i !== index),
+    });
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -113,6 +200,19 @@ function ProductFields({ form, setForm, accounts, categoryLocked }) {
       {isLoan && (
         <>
           <div>
+            <label className="text-xs text-gray-500">
+              First payment is due
+            </label>
+            <select
+              value={form.first_payment_offset}
+              onChange={set("first_payment_offset")}
+              className={inputClass}
+            >
+              <option value="1">In the month after the booking date</option>
+              <option value="0">In the booking month itself</option>
+            </select>
+          </div>
+          <div>
             <label className="text-xs text-gray-500">Interest type</label>
             <select
               value={form.interest_type}
@@ -120,20 +220,116 @@ function ProductFields({ form, setForm, accounts, categoryLocked }) {
               className={inputClass}
             >
               <option value="">None</option>
-              <option value="one_off">One-off (flat)</option>
-              <option value="reducing_balance">Reducing balance</option>
+              <option value="one_off">
+                One-off (added to the loan when issued)
+              </option>
+              <option value="reducing_balance">
+                Reducing balance (monthly, paid separately)
+              </option>
+              <option value="scheduled">
+                Scheduled charges (paid separately)
+              </option>
             </select>
           </div>
-          <div>
-            <label className="text-xs text-gray-500">Interest rate (%)</label>
-            <input
-              type="number"
-              step="0.01"
-              value={form.interest_rate}
-              onChange={set("interest_rate")}
-              className={inputClass}
-            />
-          </div>
+          {usesRate && (
+            <div>
+              <label className="text-xs text-gray-500">
+                Interest rate (% per year)
+              </label>
+              <input
+                type="number"
+                step="0.01"
+                value={form.interest_rate}
+                onChange={set("interest_rate")}
+                className={inputClass}
+              />
+            </div>
+          )}
+          {paidSeparately && (
+            <div>
+              <label className="text-xs text-gray-500">
+                Interest is paid through
+              </label>
+              <select
+                value={form.interest_product_id}
+                onChange={set("interest_product_id")}
+                className={inputClass}
+              >
+                <option value="">Select the interest payment line...</option>
+                {interestProducts.map((p) => (
+                  <option key={p.id} value={p.id}>
+                    {p.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+          {form.interest_type === "scheduled" && (
+            <div className="sm:col-span-3">
+              <label className="text-xs text-gray-500">
+                Interest charges. Each is due once, as a separate payment on the
+                line above.
+              </label>
+              {form.interest_rules.map((r, i) => (
+                <div
+                  key={i}
+                  className="grid grid-cols-1 sm:grid-cols-4 gap-3 mt-2 items-end"
+                >
+                  <div>
+                    <label className="text-xs text-gray-500">
+                      Months after the first payment (0 = with it)
+                    </label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={r.months_after}
+                      onChange={(e) =>
+                        updateRule(i, "months_after", e.target.value)
+                      }
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">Rate (%)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={r.rate}
+                      onChange={(e) => updateRule(i, "rate", e.target.value)}
+                      className={inputClass}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-500">Applied to</label>
+                    <select
+                      value={r.basis}
+                      onChange={(e) => updateRule(i, "basis", e.target.value)}
+                      className={inputClass}
+                    >
+                      <option value="principal">Original loan amount</option>
+                      <option value="balance">Balance at that time</option>
+                    </select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => removeRule(i)}
+                  >
+                    Remove
+                  </Button>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="secondary"
+                className="mt-3"
+                onClick={addRule}
+              >
+                + Add interest charge
+              </Button>
+            </div>
+          )}
         </>
       )}
 
@@ -215,10 +411,20 @@ function ProductsPage() {
     const a = accounts.find((x) => x.id === id);
     return a ? `${a.code} — ${a.name}` : null;
   };
+  const nameById = {};
+  products.forEach((p) => {
+    nameById[p.id] = p.name;
+  });
+  const interestProducts = products.filter((p) => p.category === "other");
 
   const handleCreate = async (e) => {
     e.preventDefault();
     setMessage(null);
+    const problem = validate(form);
+    if (problem) {
+      setMessage({ text: problem, ok: false });
+      return;
+    }
     try {
       await createProduct(toPayload(form));
       setForm(emptyForm());
@@ -241,6 +447,11 @@ function ProductsPage() {
   const handleSaveEdit = async (e) => {
     e.preventDefault();
     setMessage(null);
+    const problem = validate(editForm);
+    if (problem) {
+      setMessage({ text: problem, ok: false });
+      return;
+    }
     try {
       await updateProduct(editingId, toPayload(editForm));
       setEditingId(null);
@@ -267,15 +478,24 @@ function ProductsPage() {
 
   if (loading) return <p className="text-gray-500">Loading products...</p>;
 
+  const paidSeparately = (p) =>
+    p.interest_type === "reducing_balance" || p.interest_type === "scheduled";
   const notCompulsoryCount = products.filter(
     (p) => p.category !== "loan" && !p.is_compulsory,
   ).length;
   const notLinkedCount = products.filter((p) => !p.linked_account_id).length;
+  const noInterestLineCount = products.filter(
+    (p) => p.category === "loan" && paidSeparately(p) && !p.interest_product_id,
+  ).length;
 
   const visible = products.filter((p) => {
     if (filter === "not_compulsory")
       return p.category !== "loan" && !p.is_compulsory;
     if (filter === "not_linked") return !p.linked_account_id;
+    if (filter === "no_interest_line")
+      return (
+        p.category === "loan" && paidSeparately(p) && !p.interest_product_id
+      );
     return true;
   });
 
@@ -290,6 +510,7 @@ function ProductsPage() {
             form={form}
             setForm={setForm}
             accounts={accounts}
+            interestProducts={interestProducts}
             categoryLocked={false}
           />
           <Button type="submit">Add Product</Button>
@@ -317,6 +538,10 @@ function ProductsPage() {
           <option value="not_linked">
             Not linked to a ledger account ({notLinkedCount})
           </option>
+          <option value="no_interest_line">
+            Loans paying interest separately, with no interest line (
+            {noInterestLineCount})
+          </option>
         </select>
       </div>
 
@@ -326,7 +551,7 @@ function ProductsPage() {
           <th className="py-3 px-6">Category</th>
           <th className="py-3 px-6">Ledger account</th>
           <th className="py-3 px-6">Interest</th>
-          <th className="py-3 px-6">Compulsory due</th>
+          <th className="py-3 px-6">Compulsory due / first payment</th>
           <th className="py-3 px-6">Actions</th>
         </TableHead>
         <tbody>
@@ -349,13 +574,32 @@ function ProductsPage() {
                   )}
                 </td>
                 <td className="py-3 px-6 text-gray-600">
-                  {p.category === "loan" && p.interest_rate != null
-                    ? `${parseFloat(p.interest_rate)}% ${p.interest_type === "reducing_balance" ? "reducing" : p.interest_type === "one_off" ? "one-off" : ""}`
-                    : "—"}
+                  {p.category === "loan" && p.interest_type ? (
+                    <>
+                      {p.interest_type === "scheduled"
+                        ? rulesSummary(p.interest_rules) ||
+                          "Scheduled (no charges set)"
+                        : `${parseFloat(p.interest_rate || 0)}% ${p.interest_type === "reducing_balance" ? "reducing" : "one-off"}`}
+                      {paidSeparately(p) && (
+                        <span className="block text-xs text-gray-400">
+                          {p.interest_product_id
+                            ? `paid via ${nameById[p.interest_product_id] || "?"}`
+                            : "⚠ no interest payment line"}
+                        </span>
+                      )}
+                    </>
+                  ) : (
+                    "—"
+                  )}
                 </td>
                 <td className="py-3 px-6 text-gray-600">
                   {p.category === "loan" ? (
-                    "—"
+                    <span className="text-xs">
+                      First payment{" "}
+                      {p.first_payment_offset === 0
+                        ? "in the booking month"
+                        : "the month after booking"}
+                    </span>
                   ) : p.is_compulsory ? (
                     `₦${parseFloat(p.expected_amount || 0).toLocaleString()} ${p.due_frequency}`
                   ) : (
@@ -389,6 +633,7 @@ function ProductsPage() {
                         form={editForm}
                         setForm={setEditForm}
                         accounts={accounts}
+                        interestProducts={interestProducts}
                         categoryLocked
                       />
                       <div className="flex gap-2">

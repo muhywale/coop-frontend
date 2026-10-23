@@ -92,11 +92,12 @@ function LoanForm({ onLoanAdded }) {
             <option value="">Select loan product</option>
             {loanProducts.map((p) => (
               <option key={p.id} value={p.id}>
-                {p.name} ({p.interest_rate}%{" "}
-                {p.interest_type === "reducing_balance"
-                  ? "reducing"
-                  : "one-off"}
-                )
+                {p.name}
+                {p.interest_type === "scheduled"
+                  ? " (scheduled interest)"
+                  : p.interest_type
+                    ? ` (${p.interest_rate}% ${p.interest_type === "reducing_balance" ? "reducing" : "one-off"})`
+                    : ""}
               </option>
             ))}
           </select>
