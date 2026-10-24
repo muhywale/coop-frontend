@@ -1,114 +1,105 @@
 import React, { useState, useEffect } from "react";
-import { getAccounts, getAccountLedger } from "../api/api";
-import { getAccountTheme } from "../utils/accountColors";
+import { getChartOfAccounts, getAccountStatement } from "../api/api";
+import TLedger from "../components/TLedger";
+import ExportButtons from "../components/ExportButtons";
 
-const MONTH_NAMES = [
-  "Jan",
-  "Feb",
-  "Mar",
-  "Apr",
-  "May",
-  "Jun",
-  "Jul",
-  "Aug",
-  "Sep",
-  "Oct",
-  "Nov",
-  "Dec",
-];
+const inputClass = "border border-gray-300 rounded-md px-3 py-2";
 
 function AccountLedgerPage() {
   const [accounts, setAccounts] = useState([]);
-  const [selectedAccount, setSelectedAccount] = useState("");
+  const [accountId, setAccountId] = useState("");
   const [year, setYear] = useState(new Date().getFullYear());
-  const [ledger, setLedger] = useState(null);
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    getAccounts().then((res) => setAccounts(res.data));
+    getChartOfAccounts().then((res) => {
+      setAccounts(res.data);
+      if (res.data.length > 0) setAccountId(String(res.data[0].id));
+    });
   }, []);
 
   useEffect(() => {
-    if (selectedAccount) {
-      getAccountLedger(selectedAccount, year).then((res) =>
-        setLedger(res.data),
-      );
-    }
-  }, [selectedAccount, year]);
+    if (!accountId || String(year).length !== 4) return;
+    setError("");
+    getAccountStatement(accountId, year)
+      .then((res) => setData(res.data))
+      .catch(() => setError("Failed to load the ledger"));
+  }, [accountId, year]);
 
-  const theme = ledger ? getAccountTheme(ledger.account.name) : null;
+  const exportColumns = [
+    { key: "month", label: "Month" },
+    { key: "dr", label: "DR" },
+    { key: "cr", label: "CR" },
+  ];
+  const exportData = data
+    ? [
+        ...data.ledger.rows.map((r) => ({
+          month: r.label,
+          dr: r.dr || "",
+          cr: r.cr || "",
+        })),
+        {
+          month: "BALANCE >",
+          dr:
+            data.ledger.balance.side === "dr" ? data.ledger.balance.amount : "",
+          cr:
+            data.ledger.balance.side === "cr" ? data.ledger.balance.amount : "",
+        },
+        { month: "TOTAL", dr: data.ledger.grand, cr: data.ledger.grand },
+      ]
+    : [];
 
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Account Ledger</h2>
-
-      <div className="flex flex-wrap gap-3">
-        <select
-          value={selectedAccount}
-          onChange={(e) => setSelectedAccount(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2"
-        >
-          <option value="">Select account</option>
-          {accounts.map((a) => (
-            <option key={a.id} value={a.id}>
-              {a.code} — {a.name}
-            </option>
-          ))}
-        </select>
-        <input
-          type="number"
-          value={year}
-          onChange={(e) => setYear(e.target.value)}
-          className="border border-gray-300 rounded-md px-3 py-2 w-28"
-        />
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <h2 className="text-2xl font-bold">Account Ledger</h2>
+        {data && (
+          <ExportButtons
+            data={exportData}
+            columns={exportColumns}
+            fileName={`ledger-${data.account.code}-${data.year}`}
+            title={`${data.account.name} Ledger — ${data.year}`}
+          />
+        )}
       </div>
 
-      {ledger && (
-        <div
-          className={`bg-white rounded-lg shadow-sm border-2 ${theme.accent} overflow-hidden`}
-        >
-          <div className={`px-6 py-4 ${theme.header}`}>
-            <h3 className="font-bold">{ledger.account.name}</h3>
-            <p className="text-xs font-medium">
-              Brought forward: ₦{ledger.bf.toLocaleString()}
-            </p>
-          </div>
-          <table className="w-full text-left text-sm">
-            <thead>
-              <tr className="bg-gray-50 text-gray-500 text-xs uppercase tracking-wide border-b border-gray-200">
-                <th className="py-3 px-4">Month</th>
-                <th className="py-3 px-4">DR</th>
-                <th className="py-3 px-4">CR</th>
-                <th className="py-3 px-4">Balance</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr className="border-b border-gray-50 bg-gray-50">
-                <td className="py-2 px-4 font-medium">B/F</td>
-                <td className="py-2 px-4">-</td>
-                <td className="py-2 px-4">-</td>
-                <td className="py-2 px-4 font-medium">
-                  ₦{ledger.bf.toLocaleString()}
-                </td>
-              </tr>
-              {ledger.months.map((m) => (
-                <tr
-                  key={m.month}
-                  className="border-b border-gray-50 hover:bg-gray-50"
-                >
-                  <td className="py-2 px-4">{MONTH_NAMES[m.month - 1]}</td>
-                  <td className="py-2 px-4">
-                    {m.debit > 0 ? `₦${m.debit.toLocaleString()}` : "-"}
-                  </td>
-                  <td className="py-2 px-4">
-                    {m.credit > 0 ? `₦${m.credit.toLocaleString()}` : "-"}
-                  </td>
-                  <td className="py-2 px-4 font-medium">
-                    ₦{m.balance.toLocaleString()}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      <div className="flex flex-wrap items-end gap-3">
+        <div>
+          <label className="text-xs text-gray-500 block">Account</label>
+          <select
+            value={accountId}
+            onChange={(e) => setAccountId(e.target.value)}
+            className={`${inputClass} min-w-[260px]`}
+          >
+            {accounts.map((a) => (
+              <option key={a.id} value={a.id}>
+                {a.code} — {a.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 block">Year</label>
+          <input
+            type="number"
+            value={year}
+            onChange={(e) => setYear(e.target.value)}
+            className={`${inputClass} w-28`}
+          />
+        </div>
+      </div>
+
+      {error && <p className="text-red-600">{error}</p>}
+
+      {data && (
+        <div className="max-w-md">
+          <TLedger ledger={data.ledger} year={data.year} />
+          <p className="text-xs text-gray-500 mt-3">
+            I &amp; E is the total interest added to loans in the year, shown
+            once and kept out of the months. BALANCE &gt; is carried down and
+            becomes next year's B/F.
+          </p>
         </div>
       )}
     </div>

@@ -159,3 +159,9 @@ export const resetUserPassword = (id, temp_password) =>
 export const deleteUser = (id) => api.delete(`/users/${id}`);
 export const getBackupExport = (scope) =>
   api.get("/backup/export", { params: { scope } });
+export const getAccountStatement = (accountId, year) =>
+  api.get(`/statements/account/${accountId}`, { params: { year } });
+export const getMemberStatement = (memberId, year) =>
+  api.get(`/statements/member/${memberId}`, { params: { year } });
+export const getMyStatement = (year) =>
+  api.get("/statements/me", { params: { year } });
