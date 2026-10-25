@@ -127,7 +127,7 @@ function PaymentHistoryTable({ fetchFn }) {
             </tbody>
             <tfoot>
               <tr className="bg-gray-100 font-bold border-t-2 border-gray-300">
-                <td className="py-3 px-4 sticky left-0 bg-gray-100">TOTAL</td>
+                <td className="py-3 px-4 sticky left-0 bg-gray-100">PAYMENT</td>
                 {columns.map((col) => (
                   <td key={col} className="py-3 px-4">
                     ₦{columnTotal(col).toLocaleString()}

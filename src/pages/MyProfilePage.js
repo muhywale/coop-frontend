@@ -43,14 +43,14 @@ function MyProfilePage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card>
-            <p className="text-sm text-gray-500 font-medium">Savings Balance</p>
+            <p className="text-sm text-gray-500 font-medium">Total Assets</p>
             <p className="text-3xl font-bold text-green-600 mt-1">
               ₦{parseFloat(savingsBalance).toLocaleString()}
             </p>
           </Card>
           <Card>
             <p className="text-sm text-gray-500 font-medium">
-              Total Outstanding Loans
+              Total Liabilities
             </p>
             <p className="text-3xl font-bold text-red-600 mt-1">
               ₦{totalOutstanding.toLocaleString()}
