@@ -234,7 +234,9 @@ function ProductFields({
           {usesRate && (
             <div>
               <label className="text-xs text-gray-500">
-                Interest rate (% per year)
+                {form.interest_type === "reducing_balance"
+                  ? "Interest rate (% per month)"
+                  : "Interest rate (% of the loan amount, charged once)"}
               </label>
               <input
                 type="number"
@@ -579,7 +581,7 @@ function ProductsPage() {
                       {p.interest_type === "scheduled"
                         ? rulesSummary(p.interest_rules) ||
                           "Scheduled (no charges set)"
-                        : `${parseFloat(p.interest_rate || 0)}% ${p.interest_type === "reducing_balance" ? "reducing" : "one-off"}`}
+                        : `${parseFloat(p.interest_rate || 0)}% ${p.interest_type === "reducing_balance" ? "per month, reducing" : "one-off"}`}{" "}
                       {paidSeparately(p) && (
                         <span className="block text-xs text-gray-400">
                           {p.interest_product_id

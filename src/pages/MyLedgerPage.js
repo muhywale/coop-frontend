@@ -7,10 +7,7 @@ import ProfileTabs from "../components/ProfileTabs";
 import { getMyPaymentsLedger } from "../api/api";
 
 function MyLedgerPage() {
-  const [ledger, setLedger] = useState({
-    savingsByProduct: {},
-    loansByProduct: {},
-  });
+  const [ledger, setLedger] = useState({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
