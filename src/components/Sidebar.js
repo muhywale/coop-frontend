@@ -1,7 +1,7 @@
 import { NavLink } from "react-router-dom";
 import Logo from "./ui/Logo";
 import React, { useState, useEffect } from "react";
-import { getResetRequestCount } from "../api/api";
+import { getResetRequestCount, getPlatformResetCount } from "../api/api";
 
 function Sidebar({ isAdmin, onLogout, userLabel, user }) {
   const [open, setOpen] = useState(false);
@@ -12,6 +12,19 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
     reports: false,
   });
   const [resetCount, setResetCount] = useState(0);
+
+  const [platformCount, setPlatformCount] = useState(0);
+
+  useEffect(() => {
+    if (user?.role !== "super_admin") return undefined;
+    const load = () =>
+      getPlatformResetCount()
+        .then((res) => setPlatformCount(res.data.count))
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, 60000);
+    return () => clearInterval(timer);
+  }, [user?.role]);
 
   useEffect(() => {
     if (!isAdmin) return undefined;
@@ -165,6 +178,11 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
                   onClick={closeOnClick}
                 >
                   Super Admin
+                  {platformCount > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+                      {platformCount}
+                    </span>
+                  )}
                 </NavLink>
               </div>
             )}

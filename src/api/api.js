@@ -172,3 +172,12 @@ export const getResetRequests = () => api.get("/password/requests");
 export const getResetRequestCount = () => api.get("/password/requests/count");
 export const dismissResetRequest = (id) =>
   api.post(`/password/requests/${id}/dismiss`);
+export const getCooperativeAdmins = () => api.get("/super-admin/admins");
+export const getPlatformResetCount = () =>
+  api.get("/super-admin/reset-requests/count");
+export const resetCooperativeAdminPassword = (userId, tempPassword = "") =>
+  api.put(`/super-admin/users/${userId}/reset-password`, {
+    temp_password: tempPassword,
+  });
+export const dismissAdminResetRequest = (userId) =>
+  api.post(`/super-admin/users/${userId}/dismiss-request`);
