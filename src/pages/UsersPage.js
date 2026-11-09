@@ -5,6 +5,8 @@ import {
   updateUserRole,
   resetUserPassword,
   deleteUser,
+  getResetRequests,
+  dismissResetRequest,
 } from "../api/api";
 import { useAuth } from "../context/AuthContext";
 import MemberSearchSelect from "../components/MemberSearchSelect";
@@ -23,6 +25,7 @@ const emptyForm = () => ({
 function UsersPage() {
   const { user: me } = useAuth();
   const [users, setUsers] = useState([]);
+  const [requests, setRequests] = useState([]);
   const [loading, setLoading] = useState(true);
   const [form, setForm] = useState(emptyForm());
   const [search, setSearch] = useState("");
@@ -36,20 +39,30 @@ function UsersPage() {
     setLoading(false);
   };
 
+  const fetchRequests = async () => {
+    try {
+      const res = await getResetRequests();
+      setRequests(res.data);
+    } catch {
+      // the panel simply stays empty
+    }
+  };
+
   useEffect(() => {
     fetchUsers().catch(() => {
       setMessage({ text: "Failed to load users", ok: false });
       setLoading(false);
     });
+    fetchRequests();
   }, []);
 
   const handleCreate = async (e) => {
     e.preventDefault();
     setMessage(null);
     try {
-      await createUser(form);
+      const res = await createUser(form);
       setMessage({
-        text: `Login created. Username: ${form.username} · Temporary password: ${form.temp_password}. They must change it at first login.`,
+        text: `Login created. Username: ${res.data.username} · Temporary password: ${res.data.temp_password}. Share it privately. They must change it at first login.`,
         ok: true,
       });
       setForm(emptyForm());
@@ -81,15 +94,54 @@ function UsersPage() {
     try {
       const res = await resetUserPassword(u.id, resetPassword);
       setMessage({
-        text: `${res.data.message} Temporary password: ${resetPassword}`,
+        text: `${res.data.message} Temporary password: ${res.data.temp_password}`,
         ok: true,
       });
       setResetFor(null);
       setResetPassword("");
       fetchUsers();
+      fetchRequests();
     } catch (err) {
       setMessage({
         text: err.response?.data?.error || "Failed to reset password",
+        ok: false,
+      });
+    }
+  };
+
+  const handleResetFromRequest = async (r) => {
+    const who = r.full_name || r.username;
+    if (
+      !window.confirm(
+        `Reset the password for ${who}?\n\nOnly continue once you've confirmed it's really them (a phone call or in person). They will be signed out everywhere.`,
+      )
+    )
+      return;
+
+    setMessage(null);
+    try {
+      const res = await resetUserPassword(r.user_id, "");
+      setMessage({
+        text: `${res.data.message} Temporary password for ${r.username}: ${res.data.temp_password}`,
+        ok: true,
+      });
+      fetchRequests();
+      fetchUsers();
+    } catch (err) {
+      setMessage({
+        text: err.response?.data?.error || "Failed to reset password",
+        ok: false,
+      });
+    }
+  };
+
+  const handleDismiss = async (r) => {
+    try {
+      await dismissResetRequest(r.id);
+      fetchRequests();
+    } catch (err) {
+      setMessage({
+        text: err.response?.data?.error || "Failed to dismiss the request",
         ok: false,
       });
     }
@@ -130,6 +182,49 @@ function UsersPage() {
     <div className="space-y-6">
       <h2 className="text-2xl font-bold">Users</h2>
 
+      {requests.length > 0 && (
+        <Card>
+          <h3 className="font-semibold mb-1 text-amber-700">
+            Password reset requests ({requests.length})
+          </h3>
+          <p className="text-xs text-gray-500 mb-3">
+            Confirm it's really them (a phone call or in person) before
+            resetting. Resetting signs them out everywhere.
+          </p>
+          <ul className="divide-y divide-gray-100">
+            {requests.map((r) => (
+              <li
+                key={r.id}
+                className="py-3 flex flex-wrap items-center justify-between gap-3"
+              >
+                <div>
+                  <p className="font-medium text-sm">
+                    {r.full_name
+                      ? `${r.member_number ? r.member_number + " — " : ""}${r.full_name}`
+                      : r.username}
+                    <span className="ml-2 text-gray-400 font-normal">
+                      ({r.username})
+                    </span>
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    Asked {new Date(r.created_at).toLocaleString()}
+                    {r.note ? ` · "${r.note}"` : ""}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button onClick={() => handleResetFromRequest(r)}>
+                    Reset &amp; generate password
+                  </Button>
+                  <Button variant="secondary" onClick={() => handleDismiss(r)}>
+                    Dismiss
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       <Card>
         <h3 className="font-semibold mb-1">Create a login</h3>
         <p className="text-xs text-gray-500 mb-4">
@@ -158,14 +253,14 @@ function UsersPage() {
             />
           </div>
           <div>
-            <label className="text-xs text-gray-500">Temporary password</label>
+            <label className="text-xs text-gray-500">
+              Temporary password (blank = generate one)
+            </label>
             <input
               value={form.temp_password}
               onChange={(e) =>
                 setForm({ ...form, temp_password: e.target.value })
               }
-              required
-              minLength={6}
               className={inputClass}
             />
           </div>
@@ -281,7 +376,8 @@ function UsersPage() {
                       <div className="flex flex-wrap items-end gap-3">
                         <div>
                           <label className="text-xs text-gray-500">
-                            New temporary password for {u.username}
+                            New temporary password for {u.username} (blank =
+                            generate one)
                           </label>
                           <input
                             value={resetPassword}
@@ -289,12 +385,7 @@ function UsersPage() {
                             className="block border border-gray-300 rounded-md px-3 py-2"
                           />
                         </div>
-                        <Button
-                          onClick={() => handleReset(u)}
-                          disabled={resetPassword.length < 6}
-                        >
-                          Save
-                        </Button>
+                        <Button onClick={() => handleReset(u)}>Save</Button>
                         <Button
                           variant="secondary"
                           onClick={() => setResetFor(null)}

@@ -165,3 +165,10 @@ export const getMemberStatement = (memberId, year) =>
   api.get(`/statements/member/${memberId}`, { params: { year } });
 export const getMyStatement = (year) =>
   api.get("/statements/me", { params: { year } });
+export const changeMyPassword = (data) => api.post("/password/change", data);
+export const requestPasswordReset = (data) =>
+  api.post("/password/forgot", data);
+export const getResetRequests = () => api.get("/password/requests");
+export const getResetRequestCount = () => api.get("/password/requests/count");
+export const dismissResetRequest = (id) =>
+  api.post(`/password/requests/${id}/dismiss`);

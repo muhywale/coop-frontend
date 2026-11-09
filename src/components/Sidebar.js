@@ -1,6 +1,7 @@
-import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
 import Logo from "./ui/Logo";
+import React, { useState, useEffect } from "react";
+import { getResetRequestCount } from "../api/api";
 
 function Sidebar({ isAdmin, onLogout, userLabel, user }) {
   const [open, setOpen] = useState(false);
@@ -10,6 +11,18 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
     accounting: false,
     reports: false,
   });
+  const [resetCount, setResetCount] = useState(0);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const load = () =>
+      getResetRequestCount()
+        .then((res) => setResetCount(res.data.count))
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, 60000);
+    return () => clearInterval(timer);
+  }, [isAdmin]);
 
   const toggleGroup = (key) =>
     setExpandedGroups({ ...expandedGroups, [key]: !expandedGroups[key] });
@@ -86,6 +99,11 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         onClick={closeOnClick}
       >
         {l.label}
+        {l.to === "/users" && resetCount > 0 && (
+          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+            {resetCount}
+          </span>
+        )}{" "}
       </NavLink>
     ));
 
@@ -114,7 +132,14 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
                   onClick={() => toggleGroup(group.key)}
                   className="w-full flex items-center justify-between px-4 py-2 text-xs font-semibold text-gray-400 uppercase hover:text-gray-600"
                 >
-                  {group.label}
+                  <span className="flex items-center gap-2">
+                    {group.label}
+                    {group.key === "settings" && resetCount > 0 && (
+                      <span className="bg-red-500 text-white text-[10px] rounded-full px-1.5 py-0.5">
+                        {resetCount}
+                      </span>
+                    )}
+                  </span>{" "}
                   <span
                     className={`transform transition-transform ${expandedGroups[group.key] ? "rotate-90" : ""}`}
                   >
@@ -150,6 +175,13 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
       </nav>
       <div className="border-t border-gray-100 p-4">
         <p className="text-xs text-gray-500 truncate mb-2">{userLabel}</p>
+        <NavLink
+          to="/change-password"
+          onClick={closeOnClick}
+          className="block text-center text-sm text-gray-500 hover:text-primary-600 mb-2"
+        >
+          Change password
+        </NavLink>
         <button
           onClick={onLogout}
           className="w-full text-sm text-gray-500 hover:text-red-600 border border-gray-300 rounded-md px-3 py-1.5 transition"

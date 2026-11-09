@@ -40,6 +40,7 @@ import BankLoanImportPage from "./pages/BankLoanImportPage";
 import CarryForwardPage from "./pages/CarryForwardPage";
 import UsersPage from "./pages/UsersPage";
 import BackupPage from "./pages/BackupPage";
+import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -302,6 +303,7 @@ function AppContent() {
               </ProtectedRoute>
             }
           />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
         </Routes>
       </main>
     </div>
