@@ -100,8 +100,10 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
     },
   ];
 
-  const memberLinks = [{ to: "/my-profile", label: "My Profile" }];
-
+  const memberLinks = [
+    { to: "/my-profile", label: "My Profile" },
+    { to: "/my-loans", label: "My Loans" },
+  ];
   const renderLinks = (links, closeOnClick) =>
     links.map((l) => (
       <NavLink

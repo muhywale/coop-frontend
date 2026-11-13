@@ -181,3 +181,11 @@ export const resetCooperativeAdminPassword = (userId, tempPassword = "") =>
   });
 export const dismissAdminResetRequest = (userId) =>
   api.post(`/super-admin/users/${userId}/dismiss-request`);
+export const getPortalSummary = () => api.get("/member-portal/summary");
+export const getPortalOwing = (periodType, date) =>
+  api.get("/member-portal/owing", {
+    params: { period_type: periodType, date },
+  });
+export const getPortalLoans = () => api.get("/member-portal/loans");
+export const getPortalStatement = (year) =>
+  api.get("/member-portal/statement", { params: { year } });
