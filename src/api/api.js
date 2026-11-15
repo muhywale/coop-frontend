@@ -189,3 +189,13 @@ export const getPortalOwing = (periodType, date) =>
 export const getPortalLoans = () => api.get("/member-portal/loans");
 export const getPortalStatement = (year) =>
   api.get("/member-portal/statement", { params: { year } });
+export const getPortalNotices = () => api.get("/member-portal/notices");
+export const getPortalPayments = (year) =>
+  api.get("/member-portal/payments", { params: { year } });
+export const getPortalReceipt = (kind, id) =>
+  api.get(`/member-portal/receipt/${kind}/${id}`);
+
+export const getNotices = () => api.get("/notices");
+export const createNotice = (data) => api.post("/notices", data);
+export const updateNotice = (id, data) => api.put(`/notices/${id}`, data);
+export const deleteNotice = (id) => api.delete(`/notices/${id}`);

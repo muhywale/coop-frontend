@@ -41,6 +41,8 @@ import CarryForwardPage from "./pages/CarryForwardPage";
 import UsersPage from "./pages/UsersPage";
 import BackupPage from "./pages/BackupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
+import MyReceiptsPage from "./pages/MyReceiptsPage";
+import NoticesPage from "./pages/NoticesPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -304,6 +306,30 @@ function AppContent() {
             }
           />
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route
+            path="/my-receipts"
+            element={
+              <ProtectedRoute>
+                <MyReceiptsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notices"
+            element={
+              <ProtectedRoute adminOnly>
+                <NoticesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/settings"
+            element={
+              <ProtectedRoute adminOnly>
+                <CooperativeSettingsPage />
+              </ProtectedRoute>
+            }
+          />
         </Routes>
       </main>
     </div>

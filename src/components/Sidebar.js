@@ -52,6 +52,8 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
       links: [
         { to: "/dashboard", label: "Dashboard" },
         { to: "/member-balances", label: "Individual Balances" },
+        { to: "/notices", label: "Notices" },
+        { to: "/settings", label: "Cooperative Settings" },
       ],
     },
     {
@@ -103,7 +105,9 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
   const memberLinks = [
     { to: "/my-profile", label: "My Profile" },
     { to: "/my-loans", label: "My Loans" },
+    { to: "/my-receipts", label: "Receipts" },
   ];
+
   const renderLinks = (links, closeOnClick) =>
     links.map((l) => (
       <NavLink

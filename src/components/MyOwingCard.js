@@ -23,7 +23,7 @@ const itemLabel = (c) => {
   return c.label;
 };
 
-function MyOwingCard() {
+function MyOwingCard({ note }) {
   const [period, setPeriod] = useState("month");
   const [date, setDate] = useState(toLocalDateString(new Date()));
   const [data, setData] = useState(null);
@@ -96,6 +96,8 @@ function MyOwingCard() {
           Nothing is scheduled for you this {period}.
         </p>
       )}
+
+      {note && <p className="text-xs text-amber-700 mt-1">{note}</p>}
 
       {row && (
         <>

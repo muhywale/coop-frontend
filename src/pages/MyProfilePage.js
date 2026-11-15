@@ -6,6 +6,9 @@ import Badge from "../components/ui/Badge";
 import Button from "../components/ui/Button";
 import ProfileTabs from "../components/ProfileTabs";
 import MyOwingCard from "../components/MyOwingCard";
+import NoticesCard from "../components/NoticesCard";
+import ContactCard from "../components/ContactCard";
+import InstallAppCard from "../components/InstallAppCard";
 import {
   downloadStatementPDF,
   downloadStatementExcel,
@@ -45,7 +48,7 @@ function MyProfilePage() {
   if (error) return <p className="text-red-600">{error}</p>;
   if (!data) return <p className="text-gray-500">Loading...</p>;
 
-  const { member, savings, savings_total: savingsTotal, loans } = data;
+  const { member, savings, savings_total: savingsTotal, loans, contact } = data;
   const years = Array.from({ length: 6 }, (_, i) => thisYear - i);
 
   return (
@@ -64,6 +67,8 @@ function MyProfilePage() {
             {member.email} · <Badge status={member.status} />
           </p>
         </div>
+
+        <NoticesCard />
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Card>
@@ -91,7 +96,7 @@ function MyProfilePage() {
           </Card>
         </div>
 
-        <MyOwingCard />
+        <MyOwingCard note={contact?.payment_note} />
 
         <div>
           <h3 className="text-lg font-semibold mb-3">My savings</h3>
@@ -108,6 +113,19 @@ function MyProfilePage() {
             </div>
           )}
         </div>
+
+        <Card>
+          <h3 className="font-semibold mb-1">My receipts</h3>
+          <p className="text-sm text-gray-500 mb-3">
+            Download a receipt for any payment you've made.
+          </p>
+          <Link
+            to="/my-receipts"
+            className="inline-block border border-gray-300 rounded-md px-4 py-2 text-sm font-medium hover:bg-gray-50"
+          >
+            View my receipts
+          </Link>
+        </Card>
 
         <Card>
           <h3 className="font-semibold mb-1">Download my statement</h3>
@@ -142,6 +160,9 @@ function MyProfilePage() {
             <p className="text-sm text-red-600 mt-2">{statementError}</p>
           )}
         </Card>
+
+        <ContactCard contact={contact} member={member} />
+        <InstallAppCard />
       </div>
     </div>
   );
