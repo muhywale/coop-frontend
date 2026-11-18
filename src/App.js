@@ -43,6 +43,8 @@ import BackupPage from "./pages/BackupPage";
 import ForgotPasswordPage from "./pages/ForgotPasswordPage";
 import MyReceiptsPage from "./pages/MyReceiptsPage";
 import NoticesPage from "./pages/NoticesPage";
+import MyRequestsPage from "./pages/MyRequestsPage";
+import RequestsPage from "./pages/RequestsPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -327,6 +329,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <CooperativeSettingsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/my-requests"
+            element={
+              <ProtectedRoute>
+                <MyRequestsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/requests"
+            element={
+              <ProtectedRoute adminOnly>
+                <RequestsPage />
               </ProtectedRoute>
             }
           />

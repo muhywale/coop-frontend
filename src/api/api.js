@@ -199,3 +199,14 @@ export const getNotices = () => api.get("/notices");
 export const createNotice = (data) => api.post("/notices", data);
 export const updateNotice = (id, data) => api.put(`/notices/${id}`, data);
 export const deleteNotice = (id) => api.delete(`/notices/${id}`);
+export const getMyRequests = () => api.get("/my-requests");
+export const sendRequest = (data) => api.post("/my-requests", data);
+export const cancelMyRequest = (id) => api.post(`/my-requests/${id}/cancel`);
+
+export const getRequests = (status) =>
+  api.get("/requests", { params: { status } });
+export const getRequestCount = () => api.get("/requests/count");
+export const approveRequest = (id, data = {}) =>
+  api.post(`/requests/${id}/approve`, data);
+export const declineRequest = (id, adminNote) =>
+  api.post(`/requests/${id}/decline`, { admin_note: adminNote });

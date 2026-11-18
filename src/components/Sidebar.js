@@ -1,7 +1,11 @@
 import { NavLink } from "react-router-dom";
 import Logo from "./ui/Logo";
 import React, { useState, useEffect } from "react";
-import { getResetRequestCount, getPlatformResetCount } from "../api/api";
+import {
+  getResetRequestCount,
+  getPlatformResetCount,
+  getRequestCount,
+} from "../api/api";
 
 function Sidebar({ isAdmin, onLogout, userLabel, user }) {
   const [open, setOpen] = useState(false);
@@ -12,6 +16,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
     reports: false,
   });
   const [resetCount, setResetCount] = useState(0);
+  const [requestCount, setRequestCount] = useState(0);
 
   const [platformCount, setPlatformCount] = useState(0);
 
@@ -31,6 +36,17 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
     const load = () =>
       getResetRequestCount()
         .then((res) => setResetCount(res.data.count))
+        .catch(() => {});
+    load();
+    const timer = setInterval(load, 60000);
+    return () => clearInterval(timer);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    if (!isAdmin) return undefined;
+    const load = () =>
+      getRequestCount()
+        .then((res) => setRequestCount(res.data.count))
         .catch(() => {});
     load();
     const timer = setInterval(load, 60000);
@@ -66,6 +82,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         { to: "/products", label: "Products" },
         { to: "/withdrawal", label: "Withdrawal" },
         { to: "/schedule", label: "Payment Schedule" },
+        { to: "/requests", label: "Requests" },
       ],
     },
     {
@@ -106,6 +123,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
     { to: "/my-profile", label: "My Profile" },
     { to: "/my-loans", label: "My Loans" },
     { to: "/my-receipts", label: "Receipts" },
+    { to: "/my-requests", label: "Requests" },
   ];
 
   const renderLinks = (links, closeOnClick) =>
@@ -121,6 +139,11 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         {l.to === "/users" && resetCount > 0 && (
           <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
             {resetCount}
+          </span>
+        )}
+        {l.to === "/requests" && requestCount > 0 && (
+          <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-0.5">
+            {requestCount}
           </span>
         )}{" "}
       </NavLink>
