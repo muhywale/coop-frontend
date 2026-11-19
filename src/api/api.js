@@ -210,3 +210,10 @@ export const approveRequest = (id, data = {}) =>
   api.post(`/requests/${id}/approve`, data);
 export const declineRequest = (id, adminNote) =>
   api.post(`/requests/${id}/decline`, { admin_note: adminNote });
+export const getRequestOptions = () => api.get("/my-requests/options");
+export const getRequestRules = () => api.get("/requests/rules");
+export const saveRequestRules = (data) => api.put("/requests/rules", data);
+export const getMemberDues = (productId) =>
+  api.get("/member-dues", { params: { product_id: productId } });
+export const saveMemberDues = (data) => api.put("/member-dues", data);
+export const completeRequest = (id) => api.post(`/requests/${id}/complete`);

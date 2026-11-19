@@ -45,6 +45,8 @@ import MyReceiptsPage from "./pages/MyReceiptsPage";
 import NoticesPage from "./pages/NoticesPage";
 import MyRequestsPage from "./pages/MyRequestsPage";
 import RequestsPage from "./pages/RequestsPage";
+import RequestRulesPage from "./pages/RequestRulesPage";
+import MemberDuesPage from "./pages/MemberDuesPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -345,6 +347,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <RequestsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/request-rules"
+            element={
+              <ProtectedRoute adminOnly>
+                <RequestRulesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/member-dues"
+            element={
+              <ProtectedRoute adminOnly>
+                <MemberDuesPage />
               </ProtectedRoute>
             }
           />

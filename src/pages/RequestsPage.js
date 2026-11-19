@@ -1,13 +1,38 @@
 import React, { useState, useEffect } from "react";
-import { getRequests, approveRequest, declineRequest } from "../api/api";
+import { Link } from "react-router-dom";
+import {
+  getRequests,
+  approveRequest,
+  declineRequest,
+  completeRequest,
+} from "../api/api";
+import { toLocalDateString } from "../utils/dateHelper";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
 
 const filterClass = "border border-gray-300 rounded-md px-3 py-2";
+const money = (n) =>
+  `₦${Number(n).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+const monthName = (s) =>
+  new Date(`${s}T00:00:00`).toLocaleDateString(undefined, {
+    month: "long",
+    year: "numeric",
+  });
+const per = (frequency) => (frequency === "weekly" ? "a week" : "a month");
+const term = (value, unit) =>
+  value
+    ? `${value} ${unit === "weeks" ? "week" : "month"}${value === 1 ? "" : "s"}`
+    : "not stated";
+const nextMonthValue = () => {
+  const d = new Date();
+  return toLocalDateString(
+    new Date(d.getFullYear(), d.getMonth() + 1, 1),
+  ).slice(0, 7);
+};
 
 const STATUS = {
   pending: ["Waiting", "bg-amber-100 text-amber-700"],
-  approved: ["Approved", "bg-blue-100 text-blue-700"],
+  approved: ["Approved, to be issued", "bg-blue-100 text-blue-700"],
   done: ["Done", "bg-green-100 text-green-700"],
   declined: ["Declined", "bg-red-100 text-red-700"],
   cancelled: ["Cancelled", "bg-gray-100 text-gray-600"],
@@ -24,6 +49,8 @@ function Row({ label, children }) {
 
 function Details({ r }) {
   const d = r.details || {};
+  const c = r.context;
+
   if (r.type === "contact") {
     return (
       <>
@@ -40,11 +67,104 @@ function Details({ r }) {
       </>
     );
   }
+  if (r.type === "withdrawal") {
+    const short = c && d.amount > c.balance + 0.005;
+    return (
+      <>
+        <Row label="Account">{d.product_name}</Row>
+        <Row label="Amount asked for">{money(d.amount)}</Row>
+        {c && (
+          <Row label="Balance now">
+            <span className={short ? "text-red-600" : ""}>
+              {money(c.balance)}
+            </span>
+          </Row>
+        )}
+        {d.paid_on && (
+          <Row label="Paid out on">
+            {new Date(`${d.paid_on}T00:00:00`).toLocaleDateString()}
+          </Row>
+        )}
+      </>
+    );
+  }
+  if (r.type === "contribution") {
+    return (
+      <>
+        <Row label="Account">{d.product_name}</Row>
+        {c && (
+          <Row label="Pays now">
+            {money(c.current_amount)} {per(d.frequency)}
+          </Row>
+        )}
+        <Row label="Asks to pay">
+          {money(d.amount)} {per(d.frequency)}
+        </Row>
+        {d.effective_from && (
+          <Row label="Starts">{monthName(d.effective_from)}</Row>
+        )}
+      </>
+    );
+  }
+  if (r.type === "loan") {
+    const guide = c?.guide;
+    const over = guide && d.amount > guide.limit + 0.005;
+    return (
+      <>
+        <Row label="Loan type">{d.product_name}</Row>
+        <Row label="Asked for">
+          {money(d.amount)} over {term(d.duration_value, d.duration_unit)}
+        </Row>
+        {d.purpose && <Row label="Purpose">{d.purpose}</Row>}
+        {c && (
+          <div className="mt-2 text-sm bg-gray-50 border border-gray-100 rounded-md px-3 py-2 space-y-0.5">
+            <Row label="Savings">{money(c.savings_total)}</Row>
+            <Row label="Still owes on loans">
+              {money(c.outstanding)}
+              {c.active_loans > 0 ? ` (${c.active_loans} active)` : ""}
+            </Row>
+            {guide ? (
+              <Row label={`Guide (${guide.multiple}× savings)`}>
+                {money(guide.limit)}
+                {over && (
+                  <span className="ml-2 text-amber-700">
+                    Asked for {money(d.amount - guide.limit)} more than the
+                    guide
+                  </span>
+                )}
+              </Row>
+            ) : (
+              <p className="text-xs text-gray-400">
+                No borrowing guide set. You can add one under Request Rules.
+              </p>
+            )}
+          </div>
+        )}
+        {d.approved_amount && (
+          <Row label="Approved">
+            {money(d.approved_amount)} over{" "}
+            {term(d.approved_duration_value, d.approved_duration_unit)}
+          </Row>
+        )}
+        {d.issued_on && (
+          <Row label="Issued">
+            {new Date(`${d.issued_on}T00:00:00`).toLocaleDateString()}
+          </Row>
+        )}
+      </>
+    );
+  }
   return null;
 }
 
 function RequestCard({ r, onResult }) {
+  const d = r.details || {};
   const [note, setNote] = useState("");
+  const [date, setDate] = useState(toLocalDateString(new Date()));
+  const [startMonth, setStartMonth] = useState(nextMonthValue());
+  const [approvedAmount, setApprovedAmount] = useState(d.amount ?? "");
+  const [duration, setDuration] = useState(d.duration_value ?? "");
+  const [unit, setUnit] = useState(d.duration_unit || "months");
   const [busy, setBusy] = useState(false);
   const [label, style] = STATUS[r.status] || [
     r.status,
@@ -66,7 +186,24 @@ function RequestCard({ r, onResult }) {
     }
   };
 
-  const approve = () => run(() => approveRequest(r.id, { admin_note: note }));
+  const approve = () => {
+    const payload = { admin_note: note };
+    if (r.type === "withdrawal") {
+      const ok = window.confirm(
+        `Record a withdrawal of ${money(d.amount)} from ${d.product_name} for ${r.full_name}, dated ${new Date(`${date}T00:00:00`).toLocaleDateString()}?\n\nThis posts to the ledger as cash paid out. Only continue once the money has been paid.`,
+      );
+      if (!ok) return;
+      payload.date = date;
+    }
+    if (r.type === "contribution") payload.effective_from = `${startMonth}-01`;
+    if (r.type === "loan") {
+      payload.approved_amount = approvedAmount;
+      payload.approved_duration_value = duration;
+      payload.approved_duration_unit = unit;
+    }
+    run(() => approveRequest(r.id, payload));
+  };
+
   const decline = () => {
     if (!note.trim()) {
       onResult({
@@ -77,6 +214,8 @@ function RequestCard({ r, onResult }) {
     }
     run(() => declineRequest(r.id, note));
   };
+
+  const inputSmall = "border border-gray-300 rounded-md px-3 py-2 text-sm";
 
   return (
     <Card>
@@ -107,21 +246,103 @@ function RequestCard({ r, onResult }) {
 
       {r.status === "pending" && (
         <div className="mt-4 border-t border-gray-100 pt-4 space-y-3">
+          {r.type === "withdrawal" && (
+            <div>
+              <label className="text-xs text-gray-500 block">
+                Date the money is paid out
+              </label>
+              <input
+                type="date"
+                value={date}
+                onChange={(e) => setDate(e.target.value)}
+                className={inputSmall}
+              />
+            </div>
+          )}
+          {r.type === "contribution" && (
+            <div>
+              <label className="text-xs text-gray-500 block">
+                New amount starts from
+              </label>
+              <input
+                type="month"
+                value={startMonth}
+                onChange={(e) => setStartMonth(e.target.value)}
+                className={inputSmall}
+              />
+            </div>
+          )}
+          {r.type === "loan" && (
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="text-xs text-gray-500 block">
+                  Approve amount
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={approvedAmount}
+                  onChange={(e) => setApprovedAmount(e.target.value)}
+                  className={`${inputSmall} w-40`}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">
+                  Repay over
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="120"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  className={`${inputSmall} w-24`}
+                />
+              </div>
+              <select
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                className={inputSmall}
+              >
+                <option value="months">Months</option>
+                <option value="weeks">Weeks</option>
+              </select>
+            </div>
+          )}
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}
             maxLength={500}
             placeholder="Note to the member (required if declining)"
-            className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+            className={`w-full ${inputSmall}`}
           />
           <div className="flex gap-2">
             <Button onClick={approve} disabled={busy}>
-              Approve
+              {r.type === "withdrawal" ? "Approve & record" : "Approve"}
             </Button>
             <Button variant="danger" onClick={decline} disabled={busy}>
               Decline
             </Button>
           </div>
+        </div>
+      )}
+
+      {r.status === "approved" && r.type === "loan" && (
+        <div className="mt-4 border-t border-gray-100 pt-4 space-y-2">
+          <p className="text-sm text-gray-600">
+            Issue this loan on the{" "}
+            <Link to="/loans" className="text-primary-600 hover:underline">
+              Loans page
+            </Link>
+            , then mark it here so the member sees it's done.
+          </p>
+          <Button
+            onClick={() => run(() => completeRequest(r.id))}
+            disabled={busy}
+          >
+            Mark as issued
+          </Button>
         </div>
       )}
     </Card>
@@ -160,6 +381,7 @@ function RequestsPage() {
           className={filterClass}
         >
           <option value="pending">Waiting for you</option>
+          <option value="approved">Approved loans, to be issued</option>
           <option value="all">Everything</option>
           <option value="done">Done</option>
           <option value="declined">Declined</option>
