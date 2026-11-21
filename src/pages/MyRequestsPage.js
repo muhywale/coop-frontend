@@ -280,17 +280,17 @@ function ContributionForm({ products, onSent, onCancel }) {
     </FormShell>
   );
 }
-
 function GuideNote({ guide, amount }) {
   if (!guide) return null;
   const above = Number.isFinite(amount) && amount > guide.limit;
   return (
     <div className="text-sm bg-blue-50 border border-blue-100 rounded-md px-3 py-2 space-y-1">
       <p>
-        As a guide, members can usually borrow up to{" "}
-        <strong>{money(guide.limit)}</strong> ({guide.multiple}× your savings of{" "}
+        As a guide, you can usually borrow up to{" "}
+        <strong>{money(guide.limit)}</strong> on this loan type (
+        {guide.multiple}× your {guide.savings_label} of{" "}
         {money(guide.qualifying_savings)}
-        {guide.deduct_outstanding && guide.outstanding > 0
+        {guide.outstanding > 0
           ? `, less ${money(guide.outstanding)} you still owe`
           : ""}
         ). Your admin decides each loan, so you can still ask for more and
@@ -305,7 +305,7 @@ function GuideNote({ guide, amount }) {
   );
 }
 
-function LoanForm({ products, guide, onSent, onCancel }) {
+function LoanForm({ products, onSent, onCancel }) {
   const [form, setForm] = useState({
     product_id: String(products[0].id),
     amount: "",
@@ -317,6 +317,9 @@ function LoanForm({ products, guide, onSent, onCancel }) {
   const { error, sending, send } = useSender("loan", onSent);
   const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
   const amount = parseFloat(form.amount);
+  const guide = (
+    products.find((p) => String(p.id) === form.product_id) || products[0]
+  ).guide;
 
   return (
     <FormShell
@@ -493,7 +496,6 @@ function MyRequestsPage() {
         {formType === "loan" && (
           <LoanForm
             products={options.loan_products}
-            guide={options.guide}
             onSent={handleSent}
             onCancel={() => setFormType(null)}
           />

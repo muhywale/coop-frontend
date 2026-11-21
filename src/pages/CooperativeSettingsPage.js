@@ -15,6 +15,7 @@ function CooperativeSettingsPage() {
     contact_phone: "",
     contact_whatsapp: "",
     payment_note: "",
+    repayment_rounding: 1,
   });
   const [message, setMessage] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -28,6 +29,7 @@ function CooperativeSettingsPage() {
         contact_phone: res.data.contact_phone || "",
         contact_whatsapp: res.data.contact_whatsapp || "",
         payment_note: res.data.payment_note || "",
+        repayment_rounding: res.data.repayment_rounding || 1,
       }),
     );
   }, []);
@@ -90,6 +92,28 @@ function CooperativeSettingsPage() {
             onChange={set("primary_color")}
             className="h-10 w-20 border border-gray-300 rounded-md"
           />
+        </div>
+        <div className="border-t border-gray-100 pt-4">
+          <h3 className="font-semibold mb-1">Loan repayments</h3>
+          <label className="text-xs text-gray-500">
+            Round loan installments and interest due to the nearest
+          </label>
+          <select
+            value={form.repayment_rounding}
+            onChange={set("repayment_rounding")}
+            className={inputClass}
+          >
+            <option value={1}>₦1 (whole naira)</option>
+            <option value={10}>₦10</option>
+            <option value={50}>₦50</option>
+            <option value={100}>₦100</option>
+            <option value={500}>₦500</option>
+            <option value={1000}>₦1,000</option>
+          </select>
+          <p className="text-xs text-gray-500 mt-1">
+            Used on the Payment Schedule, Fill expected and members' "What I
+            owe". The last installment collects the remainder.
+          </p>
         </div>
 
         <div className="border-t border-gray-100 pt-4">

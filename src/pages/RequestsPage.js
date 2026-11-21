@@ -124,7 +124,7 @@ function Details({ r }) {
               {c.active_loans > 0 ? ` (${c.active_loans} active)` : ""}
             </Row>
             {guide ? (
-              <Row label={`Guide (${guide.multiple}× savings)`}>
+              <Row label={`Guide (${guide.multiple}× ${guide.savings_label})`}>
                 {money(guide.limit)}
                 {over && (
                   <span className="ml-2 text-amber-700">
