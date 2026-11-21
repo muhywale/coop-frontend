@@ -72,6 +72,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         { to: "/settings", label: "Cooperative Settings" },
         { to: "/request-rules", label: "Request Rules" },
         { to: "/member-dues", label: "Contribution Amounts" },
+        { to: "/activity-log", label: "Activity Log" },
       ],
     },
     {

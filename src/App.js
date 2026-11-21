@@ -47,6 +47,7 @@ import MyRequestsPage from "./pages/MyRequestsPage";
 import RequestsPage from "./pages/RequestsPage";
 import RequestRulesPage from "./pages/RequestRulesPage";
 import MemberDuesPage from "./pages/MemberDuesPage";
+import ActivityLogPage from "./pages/ActivityLogPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -363,6 +364,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <MemberDuesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/activity-log"
+            element={
+              <ProtectedRoute adminOnly>
+                <ActivityLogPage />
               </ProtectedRoute>
             }
           />

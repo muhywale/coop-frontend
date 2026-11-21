@@ -1,6 +1,13 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { getAccountTheme } from "../utils/accountColors";
 
+const money = (n) => {
+  const value = Number(n) || 0;
+  return value < 0
+    ? `-₦${Math.abs(value).toLocaleString()}`
+    : `₦${value.toLocaleString()}`;
+};
+
 function formatPeriod(period, groupBy) {
   const d = new Date(period);
   if (groupBy === "day") return d.toLocaleDateString();
@@ -10,50 +17,63 @@ function formatPeriod(period, groupBy) {
 
 function LedgerBlock({ title, bf, periods, groupBy }) {
   const theme = getAccountTheme(title);
+
+  // Tight on phones, roomier from tablet size up
+  const cell = "py-2 px-2 sm:px-6";
+  const number = `${cell} text-right whitespace-nowrap`;
+
   return (
     <div
       className={`mb-6 bg-white rounded-lg shadow-sm border-2 ${theme.accent} overflow-hidden`}
     >
       <div
-        className={`flex justify-between items-center px-6 py-4 ${theme.header}`}
+        className={`flex flex-wrap justify-between items-center gap-x-4 gap-y-1 px-3 sm:px-6 py-3 sm:py-4 ${theme.header}`}
       >
         <h4 className="font-bold">{title}</h4>
-        <span className="text-xs font-medium">B/F: ₦{bf.toLocaleString()}</span>
+        <span className="text-xs font-medium whitespace-nowrap">
+          B/F: {money(bf)}
+        </span>
       </div>
-      <table className="w-full text-left text-sm">
-        <thead>
-          <tr className="text-gray-500 text-xs uppercase tracking-wide border-b border-gray-100">
-            <th className="py-2 px-6">Period</th>
-            <th className="py-2 px-6">DR</th>
-            <th className="py-2 px-6">CR</th>
-            <th className="py-2 px-6">Balance</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr className="border-b border-gray-50 bg-gray-50">
-            <td className="py-2 px-6 font-medium">B/F</td>
-            <td className="py-2 px-6">-</td>
-            <td className="py-2 px-6">-</td>
-            <td className={`py-2 px-6 font-bold ${theme.bal}`}>
-              ₦{bf.toLocaleString()}
-            </td>
-          </tr>
-          {periods.map((p, i) => (
-            <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
-              <td className="py-2 px-6">{formatPeriod(p.period, groupBy)}</td>
-              <td className="py-2 px-6 text-red-600">
-                {p.dr > 0 ? `₦${p.dr.toLocaleString()}` : "-"}
-              </td>
-              <td className="py-2 px-6 text-green-600">
-                {p.cr > 0 ? `₦${p.cr.toLocaleString()}` : "-"}
-              </td>
-              <td className={`py-2 px-6 font-bold ${theme.bal}`}>
-                ₦{p.balance.toLocaleString()}
+
+      {/* If a figure is still too wide for a very small screen, it scrolls here instead of being cut off */}
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-xs sm:text-sm">
+          <thead>
+            <tr className="text-gray-500 text-[10px] sm:text-xs uppercase tracking-wide border-b border-gray-100">
+              <th className={cell}>Period</th>
+              <th className={number}>DR</th>
+              <th className={number}>CR</th>
+              <th className={number}>Balance</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr className="border-b border-gray-50 bg-gray-50">
+              <td className={`${cell} font-medium`}>B/F</td>
+              <td className={number}>-</td>
+              <td className={number}>-</td>
+              <td className={`${number} font-bold ${theme.bal}`}>
+                {money(bf)}
               </td>
             </tr>
-          ))}
-        </tbody>
-      </table>
+            {periods.map((p, i) => (
+              <tr key={i} className="border-b border-gray-50 hover:bg-gray-50">
+                <td className={`${cell} sm:whitespace-nowrap`}>
+                  {formatPeriod(p.period, groupBy)}
+                </td>
+                <td className={`${number} text-red-600`}>
+                  {p.dr > 0 ? money(p.dr) : "-"}
+                </td>
+                <td className={`${number} text-green-600`}>
+                  {p.cr > 0 ? money(p.cr) : "-"}
+                </td>
+                <td className={`${number} font-bold ${theme.bal}`}>
+                  {money(p.balance)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 }

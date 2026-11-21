@@ -217,3 +217,5 @@ export const getMemberDues = (productId) =>
   api.get("/member-dues", { params: { product_id: productId } });
 export const saveMemberDues = (data) => api.put("/member-dues", data);
 export const completeRequest = (id) => api.post(`/requests/${id}/complete`);
+export const getActivity = (params) => api.get("/activity", { params });
+export const getActivityUsers = () => api.get("/activity/users");
