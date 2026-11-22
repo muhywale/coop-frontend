@@ -48,6 +48,8 @@ import RequestsPage from "./pages/RequestsPage";
 import RequestRulesPage from "./pages/RequestRulesPage";
 import MemberDuesPage from "./pages/MemberDuesPage";
 import ActivityLogPage from "./pages/ActivityLogPage";
+import YearEndPage from "./pages/YearEndPage";
+import SettingsHubPage from "./pages/SettingsHubPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -372,6 +374,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <ActivityLogPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/year-end"
+            element={
+              <ProtectedRoute adminOnly>
+                <YearEndPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/setup"
+            element={
+              <ProtectedRoute adminOnly>
+                <SettingsHubPage />
               </ProtectedRoute>
             }
           />
