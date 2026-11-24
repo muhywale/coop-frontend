@@ -221,3 +221,7 @@ export const getActivity = (params) => api.get("/activity", { params });
 export const getActivityUsers = () => api.get("/activity/users");
 export const getYearEndReport = (year) =>
   api.get("/year-end", { params: { year } });
+export const getFineRules = () => api.get("/fine-rules");
+export const saveFineRules = (data) => api.put("/fine-rules", data);
+export const getLoanFormFees = () => api.get("/loan-form-fees");
+export const saveLoanFormFees = (data) => api.put("/loan-form-fees", data);

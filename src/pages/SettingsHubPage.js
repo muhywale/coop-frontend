@@ -12,6 +12,8 @@ import {
   Landmark,
   History,
   ListOrdered,
+  Gavel,
+  FileText,
 } from "lucide-react";
 import { getResetRequestCount } from "../api/api";
 
@@ -81,6 +83,20 @@ const SECTIONS = [
         text: "Different monthly amounts for individual members",
         icon: Coins,
         color: "emerald",
+      },
+      {
+        to: "/fine-rules",
+        label: "Fine Rules",
+        text: "Fines for late or short payments",
+        icon: Gavel,
+        color: "amber",
+      },
+      {
+        to: "/loan-form-fees",
+        label: "Loan Form Amounts",
+        text: "The form amount charged for each loan type",
+        icon: FileText,
+        color: "sky",
       },
     ],
   },

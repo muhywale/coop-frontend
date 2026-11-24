@@ -50,6 +50,8 @@ import MemberDuesPage from "./pages/MemberDuesPage";
 import ActivityLogPage from "./pages/ActivityLogPage";
 import YearEndPage from "./pages/YearEndPage";
 import SettingsHubPage from "./pages/SettingsHubPage";
+import FineRulesPage from "./pages/FineRulesPage";
+import LoanFormFeesPage from "./pages/LoanFormFeesPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -390,6 +392,22 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <SettingsHubPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/fine-rules"
+            element={
+              <ProtectedRoute adminOnly>
+                <FineRulesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/loan-form-fees"
+            element={
+              <ProtectedRoute adminOnly>
+                <LoanFormFeesPage />
               </ProtectedRoute>
             }
           />

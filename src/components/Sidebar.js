@@ -89,6 +89,7 @@ const SETUP_PATHS = [
   "/bank-loan-import",
   "/carry-forward",
   "/chart-of-accounts",
+  "/fine-rules",
 ];
 
 // A group with no label is shown as a single top-level link
@@ -327,7 +328,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         </span>
       </div>
 
-      <nav className="flex-1 overflow-y-auto px-2 py-4 space-y-1">
+      <nav className="flex-1 min-h-0 overflow-y-auto px-2 py-4 space-y-1">
         {isAdmin ? (
           <>
             {NAV.map((group) => renderGroup(group, closeOnClick))}
@@ -354,7 +355,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         )}
       </nav>
 
-      <div className="border-t border-gray-100 p-4 space-y-1">
+      <div className="shrink-0 border-t border-gray-100 p-4 pb-6 space-y-1">
         <p className="text-xs text-gray-500 truncate mb-2">{userLabel}</p>
         <Link
           to="/change-password"
@@ -366,7 +367,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
         <button
           type="button"
           onClick={onLogout}
-          className="w-full flex items-center justify-center gap-2 text-sm text-gray-500 hover:text-red-600 border border-gray-300 rounded-md px-3 py-1.5 transition"
+          className="w-full flex items-center justify-center gap-2 text-sm text-red-600 border border-red-200 hover:bg-red-50 rounded-md px-3 py-2 transition"
         >
           <LogOut size={15} /> Logout
         </button>
@@ -391,17 +392,29 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
             {user?.cooperative_name || ""}
           </span>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen(!open)}
-          className="relative p-2 text-gray-600"
-          aria-label="Toggle menu"
-        >
-          {open ? <X size={22} /> : <Menu size={22} />}
-          {!open && alerts > 0 && (
-            <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
-          )}
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            type="button"
+            onClick={() => {
+              if (window.confirm("Log out of your account?")) onLogout();
+            }}
+            className="p-2 text-gray-500"
+            aria-label="Log out"
+          >
+            <LogOut size={20} />
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(!open)}
+            className="relative p-2 text-gray-600"
+            aria-label="Toggle menu"
+          >
+            {open ? <X size={22} /> : <Menu size={22} />}
+            {!open && alerts > 0 && (
+              <span className="absolute top-1 right-1 w-2.5 h-2.5 bg-red-500 rounded-full" />
+            )}
+          </button>
+        </div>
       </div>
 
       {open && (
@@ -410,7 +423,7 @@ function Sidebar({ isAdmin, onLogout, userLabel, user }) {
             className="lg:hidden fixed inset-0 bg-black/30 z-40"
             onClick={() => setOpen(false)}
           />
-          <aside className="lg:hidden fixed top-0 left-0 h-screen w-64 bg-white border-r border-gray-200 flex flex-col z-50">
+          <aside className="lg:hidden fixed inset-y-0 left-0 w-64 bg-white border-r border-gray-200 flex flex-col z-50">
             {renderBody(() => setOpen(false))}
           </aside>
         </>
