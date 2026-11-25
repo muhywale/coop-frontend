@@ -225,3 +225,4 @@ export const getFineRules = () => api.get("/fine-rules");
 export const saveFineRules = (data) => api.put("/fine-rules", data);
 export const getLoanFormFees = () => api.get("/loan-form-fees");
 export const saveLoanFormFees = (data) => api.put("/loan-form-fees", data);
+export const saveDueSeason = (data) => api.put("/member-dues/season", data);

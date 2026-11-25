@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { getMemberDues, saveMemberDues } from "../api/api";
+import { getMemberDues, saveMemberDues, saveDueSeason } from "../api/api";
 import { toLocalDateString } from "../utils/dateHelper";
 import Card from "../components/ui/Card";
 import Button from "../components/ui/Button";
@@ -15,15 +15,45 @@ const nextMonthValue = () => {
   ).slice(0, 7);
 };
 
+const MONTH_NAMES = [
+  "January",
+  "February",
+  "March",
+  "April",
+  "May",
+  "June",
+  "July",
+  "August",
+  "September",
+  "October",
+  "November",
+  "December",
+];
+const MONTH_SHORT = MONTH_NAMES.map((m) => m.slice(0, 3));
+
+// Same rule as the schedule uses
+const inSeason = (month, from, to) => {
+  if (!from && !to) return true;
+  const start = from || 1;
+  const end = to || 12;
+  return start <= end
+    ? month >= start && month <= end
+    : month >= start || month <= end;
+};
+
 function MemberDuesPage() {
   const [products, setProducts] = useState([]);
   const [productId, setProductId] = useState("");
   const [data, setData] = useState(null);
   const [edits, setEdits] = useState({});
   const [month, setMonth] = useState(nextMonthValue());
+  const [startMonth, setStartMonth] = useState("");
+  const [endMonth, setEndMonth] = useState("");
   const [search, setSearch] = useState("");
   const [message, setMessage] = useState(null);
+  const [seasonMessage, setSeasonMessage] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [savingSeason, setSavingSeason] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -41,7 +71,17 @@ function MemberDuesPage() {
 
   const loadMembers = (id) =>
     getMemberDues(id)
-      .then((res) => setData(res.data))
+      .then((res) => {
+        setData(res.data);
+        setStartMonth(
+          res.data.product?.start_month
+            ? String(res.data.product.start_month)
+            : "",
+        );
+        setEndMonth(
+          res.data.product?.end_month ? String(res.data.product.end_month) : "",
+        );
+      })
       .catch(() =>
         setMessage({ text: "Couldn't load the members.", ok: false }),
       );
@@ -50,6 +90,7 @@ function MemberDuesPage() {
     if (!productId) return;
     setData(null);
     setEdits({});
+    setSeasonMessage(null);
     loadMembers(productId);
   }, [productId]);
 
@@ -87,6 +128,26 @@ function MemberDuesPage() {
     }
   };
 
+  const saveSeason = async () => {
+    setSavingSeason(true);
+    setSeasonMessage(null);
+    try {
+      const res = await saveDueSeason({
+        product_id: Number(productId),
+        start_month: startMonth,
+        end_month: endMonth,
+      });
+      setSeasonMessage({ text: res.data.message, ok: true });
+    } catch (err) {
+      setSeasonMessage({
+        text: err.response?.data?.error || "Couldn't save.",
+        ok: false,
+      });
+    } finally {
+      setSavingSeason(false);
+    }
+  };
+
   if (loading) return <p className="text-gray-500">Loading...</p>;
 
   if (products.length === 0) {
@@ -110,6 +171,10 @@ function MemberDuesPage() {
           (m.member_number || "").toLowerCase().includes(q),
       )
     : [];
+
+  const from = Number(startMonth) || null;
+  const to = Number(endMonth) || null;
+  const activeMonths = MONTH_SHORT.filter((_, i) => inSeason(i + 1, from, to));
 
   return (
     <div className="space-y-4">
@@ -158,6 +223,73 @@ function MemberDuesPage() {
           )}
         </div>
       </Card>
+
+      {data?.product && (
+        <Card>
+          <h3 className="font-semibold mb-1">
+            When {data.product.name} applies
+          </h3>
+          <p className="text-sm text-gray-500 mb-4">
+            By default a compulsory payment is expected all year. If it only
+            begins part-way through the year, for example a monthly share that
+            starts in March every year, choose the start month. Months outside
+            the range show nothing expected and can't produce fines. This
+            repeats every year and also covers members' own amounts.
+          </p>
+          <div className="flex flex-wrap items-end gap-4">
+            <div>
+              <label className="text-xs text-gray-500 block">Starts in</label>
+              <select
+                value={startMonth}
+                onChange={(e) => setStartMonth(e.target.value)}
+                className={`${inputClass} min-w-[200px]`}
+              >
+                <option value="">From the start of the year</option>
+                {MONTH_NAMES.map((name, i) => (
+                  <option key={name} value={i + 1}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="text-xs text-gray-500 block">
+                Stops after (optional)
+              </label>
+              <select
+                value={endMonth}
+                onChange={(e) => setEndMonth(e.target.value)}
+                className={`${inputClass} min-w-[200px]`}
+              >
+                <option value="">Runs to the end of the year</option>
+                {MONTH_NAMES.map((name, i) => (
+                  <option key={name} value={i + 1}>
+                    {name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Button onClick={saveSeason} disabled={savingSeason}>
+              {savingSeason ? "Saving..." : "Save"}
+            </Button>
+          </div>
+          <p className="text-sm text-gray-600 mt-3">
+            Expected in:{" "}
+            <span className="font-medium">
+              {activeMonths.length === 12
+                ? "every month"
+                : activeMonths.join(", ")}
+            </span>
+          </p>
+          {seasonMessage && (
+            <p
+              className={`text-sm mt-2 ${seasonMessage.ok ? "text-green-600" : "text-red-600"}`}
+            >
+              {seasonMessage.text}
+            </p>
+          )}
+        </Card>
+      )}
 
       <div className="flex flex-wrap items-center gap-3">
         <input
