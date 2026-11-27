@@ -52,6 +52,8 @@ import YearEndPage from "./pages/YearEndPage";
 import SettingsHubPage from "./pages/SettingsHubPage";
 import FineRulesPage from "./pages/FineRulesPage";
 import LoanFormFeesPage from "./pages/LoanFormFeesPage";
+import MemberDetailsPage from "./pages/MemberDetailsPage";
+import MemberDirectoryPage from "./pages/MemberDirectoryPage";
 
 function AppContent() {
   const { user, logout } = useAuth();
@@ -101,6 +103,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <MemberDetailPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/members/:id/details"
+            element={
+              <ProtectedRoute adminOnly>
+                <MemberDetailsPage />
               </ProtectedRoute>
             }
           />
@@ -408,6 +418,14 @@ function AppContent() {
             element={
               <ProtectedRoute adminOnly>
                 <LoanFormFeesPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/member-directory"
+            element={
+              <ProtectedRoute adminOnly>
+                <MemberDirectoryPage />
               </ProtectedRoute>
             }
           />

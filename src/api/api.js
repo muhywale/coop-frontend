@@ -226,3 +226,7 @@ export const saveFineRules = (data) => api.put("/fine-rules", data);
 export const getLoanFormFees = () => api.get("/loan-form-fees");
 export const saveLoanFormFees = (data) => api.put("/loan-form-fees", data);
 export const saveDueSeason = (data) => api.put("/member-dues/season", data);
+export const getMemberProfile = (id) => api.get(`/member-profiles/${id}`);
+export const updateMemberProfile = (id, data) =>
+  api.put(`/member-profiles/${id}`, data);
+export const getMemberDirectory = () => api.get("/member-profiles");

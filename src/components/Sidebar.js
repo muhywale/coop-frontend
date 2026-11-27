@@ -90,6 +90,7 @@ const SETUP_PATHS = [
   "/carry-forward",
   "/chart-of-accounts",
   "/fine-rules",
+  "/loan-form-fees",
 ];
 
 // A group with no label is shown as a single top-level link
@@ -106,6 +107,7 @@ const NAV = [
     icon: Users,
     links: [
       { to: "/", also: ["/members"], label: "Members", icon: Users },
+      { to: "/member-directory", label: "Directory", icon: ClipboardList },
       { to: "/requests", label: "Requests", icon: Inbox, badge: "requests" },
     ],
   },

@@ -30,6 +30,11 @@ const nextMonthValue = () => {
   ).slice(0, 7);
 };
 
+const periodText = (d) =>
+  d.unit === "weeks"
+    ? `the week of ${new Date(`${d.start}T00:00:00`).toLocaleDateString()}`
+    : monthName(d.start);
+
 const STATUS = {
   pending: ["Waiting", "bg-amber-100 text-amber-700"],
   approved: ["Approved, to be issued", "bg-blue-100 text-blue-700"],
@@ -154,6 +159,35 @@ function Details({ r }) {
       </>
     );
   }
+  if (r.type === "repayment") {
+    const unit = d.unit === "weeks" ? "a week" : "a month";
+    return (
+      <>
+        <Row label="Loan">{d.product_name}</Row>
+        <Row label="Regular installment">
+          {money(c?.installment ?? d.standard_amount)}
+        </Row>
+        <Row label="Asks to pay">
+          {money(d.amount)} {unit}
+        </Row>
+        <Row label={d.mode === "once" ? "For" : "From"}>
+          {periodText(d)}
+          {d.mode === "once" ? " only" : " onward"}
+        </Row>
+        {c && !c.closed && (
+          <Row label="Still owes on this loan">{money(c.outstanding)}</Row>
+        )}
+        {c?.closed && (
+          <p className="text-sm text-red-600">This loan is no longer active.</p>
+        )}
+        {d.approved_amount && (
+          <Row label="Approved">
+            {money(d.approved_amount)} {unit}
+          </Row>
+        )}
+      </>
+    );
+  }
   return null;
 }
 
@@ -165,6 +199,7 @@ function RequestCard({ r, onResult }) {
   const [approvedAmount, setApprovedAmount] = useState(d.amount ?? "");
   const [duration, setDuration] = useState(d.duration_value ?? "");
   const [unit, setUnit] = useState(d.duration_unit || "months");
+  const [repStart, setRepStart] = useState(d.start || "");
   const [busy, setBusy] = useState(false);
   const [label, style] = STATUS[r.status] || [
     r.status,
@@ -200,6 +235,10 @@ function RequestCard({ r, onResult }) {
       payload.approved_amount = approvedAmount;
       payload.approved_duration_value = duration;
       payload.approved_duration_unit = unit;
+    }
+    if (r.type === "repayment") {
+      payload.approved_amount = approvedAmount;
+      payload.effective_from = repStart;
     }
     run(() => approveRequest(r.id, payload));
   };
@@ -310,6 +349,44 @@ function RequestCard({ r, onResult }) {
               </select>
             </div>
           )}
+          {r.type === "repayment" && (
+            <div className="flex flex-wrap items-end gap-3">
+              <div>
+                <label className="text-xs text-gray-500 block">
+                  Approve amount
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  value={approvedAmount}
+                  onChange={(e) => setApprovedAmount(e.target.value)}
+                  className={`${inputSmall} w-40`}
+                />
+              </div>
+              <div>
+                <label className="text-xs text-gray-500 block">
+                  {d.unit === "weeks" ? "Starts the week of" : "Starts from"}
+                </label>
+                {d.unit === "weeks" ? (
+                  <input
+                    type="date"
+                    value={repStart}
+                    onChange={(e) => setRepStart(e.target.value)}
+                    className={inputSmall}
+                  />
+                ) : (
+                  <input
+                    type="month"
+                    value={repStart.slice(0, 7)}
+                    onChange={(e) => setRepStart(`${e.target.value}-01`)}
+                    className={inputSmall}
+                  />
+                )}
+              </div>
+            </div>
+          )}
+
           <input
             value={note}
             onChange={(e) => setNote(e.target.value)}

@@ -61,6 +61,18 @@ const summary = (r) => {
       return `Loan issued: ${money(d.approved_amount)} ${d.product_name}`;
     return `Asked for ${asked}`;
   }
+  if (r.type === "repayment") {
+    const when = d.start
+      ? d.unit === "weeks"
+        ? `the week of ${new Date(`${d.start}T00:00:00`).toLocaleDateString()}`
+        : monthName(d.start)
+      : "";
+    const unit = d.unit === "weeks" ? "a week" : "a month";
+    const amount = d.approved_amount || d.amount;
+    return `Pay ${money(amount)} ${unit} on ${d.product_name} ${d.mode === "once" ? "for" : "from"} ${when}${
+      r.status === "done" ? ". Now in effect." : ""
+    }`;
+  }
   return r.type_label;
 };
 
@@ -410,12 +422,123 @@ function LoanForm({ products, onSent, onCancel }) {
   );
 }
 
+function RepaymentForm({ loans, onSent, onCancel }) {
+  const now = new Date();
+  const monthNow = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+  const dayNow = `${monthNow}-${String(now.getDate()).padStart(2, "0")}`;
+
+  const [form, setForm] = useState({
+    loan_id: String(loans[0].id),
+    amount: "",
+    mode: "from",
+    start: "",
+    note: "",
+  });
+  const { error, sending, send } = useSender("repayment", onSent);
+  const set = (field) => (e) => setForm({ ...form, [field]: e.target.value });
+
+  const loan = loans.find((l) => String(l.id) === form.loan_id) || loans[0];
+  const weekly = loan.unit === "weeks";
+  const start = form.start || (weekly ? dayNow : monthNow);
+
+  return (
+    <FormShell
+      intro="Ask to pay more than your regular installment. If your admin approves, the higher amount is what you're expected to pay, and you still pay it the usual way."
+      error={error}
+      sending={sending}
+      onSubmit={(e) => send(e, { ...form, start })}
+      onCancel={onCancel}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div>
+          <label className="text-xs text-gray-500">Loan</label>
+          <select
+            value={form.loan_id}
+            onChange={(e) =>
+              setForm({ ...form, loan_id: e.target.value, start: "" })
+            }
+            className={inputClass}
+          >
+            {loans.map((l) => (
+              <option key={l.id} value={l.id}>
+                {l.product_name} (you owe {money(l.outstanding)})
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">
+            Amount to pay {weekly ? "each week" : "each month"} (regular:{" "}
+            {money(loan.installment)})
+          </label>
+          <input
+            type="number"
+            step="0.01"
+            min={loan.installment}
+            max={loan.outstanding}
+            value={form.amount}
+            onChange={set("amount")}
+            required
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500">
+            {weekly ? "Starting from the week of" : "Starting from"}
+          </label>
+          <input
+            type={weekly ? "date" : "month"}
+            value={start}
+            min={weekly ? dayNow : monthNow}
+            onChange={set("start")}
+            required
+            className={inputClass}
+          />
+        </div>
+        <div>
+          <label className="text-xs text-gray-500 block mb-1">
+            For how long
+          </label>
+          <label className="flex items-center gap-2 text-sm mb-1">
+            <input
+              type="radio"
+              checked={form.mode === "from"}
+              onChange={() => setForm({ ...form, mode: "from" })}
+            />
+            From then onward
+          </label>
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="radio"
+              checked={form.mode === "once"}
+              onChange={() => setForm({ ...form, mode: "once" })}
+            />
+            {weekly ? "That week only" : "That month only"}
+          </label>
+        </div>
+      </div>
+      <div>
+        <label className="text-xs text-gray-500">
+          Note to your admin (optional)
+        </label>
+        <input
+          value={form.note}
+          onChange={set("note")}
+          maxLength={500}
+          className={inputClass}
+        />
+      </div>
+    </FormShell>
+  );
+}
+
 function MyRequestsPage() {
   const [requests, setRequests] = useState(null);
   const [options, setOptions] = useState({
     withdrawable: [],
     contribution_products: [],
     loan_products: [],
+    repayable_loans: [],
     guide: null,
   });
   const [formType, setFormType] = useState(null);
@@ -465,6 +588,8 @@ function MyRequestsPage() {
     });
   if (options.loan_products.length > 0)
     types.push({ key: "loan", label: "Apply for a loan" });
+  if (options.repayable_loans.length > 0)
+    types.push({ key: "repayment", label: "Pay more on a loan" });
 
   return (
     <div className="space-y-6">
@@ -500,6 +625,14 @@ function MyRequestsPage() {
             onCancel={() => setFormType(null)}
           />
         )}
+        {formType === "repayment" && (
+          <RepaymentForm
+            loans={options.repayable_loans}
+            onSent={handleSent}
+            onCancel={() => setFormType(null)}
+          />
+        )}
+
         {!formType && (
           <div className="flex flex-wrap gap-3">
             {types.map((t) => (

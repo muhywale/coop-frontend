@@ -31,6 +31,7 @@ const touched = (r) => {
   Object.keys(d)
     .filter((k) => k.endsWith("_count"))
     .forEach((k) => parts.push(`${d[k]} ${k.replace(/_count$/, "")}`));
+  if (d.changed) parts.push(`changed: ${d.changed}`);
   return parts.join(" · ");
 };
 
